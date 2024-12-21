@@ -1,0 +1,144 @@
+2024-12-20 23:39:55,515 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-20 23:39:55,517 - __main__ - INFO - Preparing custom rootfs for user 1
+2024-12-20 23:39:55,854 - __main__ - INFO - Setting up network
+2024-12-20 23:39:56,498 - __main__ - INFO - Starting Firecracker process
+2024-12-20 23:40:06,529 - __main__ - ERROR - Error creating VM: 500: Failed to start Firecracker: timeout waiting for socket
+2024-12-20 23:42:41,736 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-20 23:42:41,737 - __main__ - ERROR - Error creating VM: 400: VM already exists
+2024-12-20 23:42:46,051 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-20 23:42:46,052 - __main__ - ERROR - Error creating VM: 400: VM already exists
+2024-12-20 23:43:15,455 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-20 23:43:15,456 - __main__ - INFO - Preparing custom rootfs for user 1
+2024-12-20 23:43:15,791 - __main__ - INFO - Setting up network
+2024-12-20 23:43:16,468 - __main__ - INFO - Starting Firecracker process
+2024-12-20 23:43:26,516 - __main__ - ERROR - Error creating VM: 500: Failed to start Firecracker: timeout waiting for socket
+2024-12-20 23:54:23,632 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-20 23:54:23,633 - __main__ - ERROR - Error creating VM: 400: VM already exists
+2024-12-20 23:54:34,530 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-20 23:54:34,531 - __main__ - INFO - Preparing custom rootfs for user 1
+2024-12-20 23:54:34,868 - __main__ - INFO - Setting up network
+2024-12-20 23:54:35,547 - __main__ - INFO - Starting Firecracker process
+2024-12-20 23:55:05,637 - __main__ - ERROR - Socket not created after 30 seconds
+2024-12-20 23:55:05,638 - __main__ - ERROR - Firecracker stderr: Error: ParseArguments(UnexpectedArgument("seccomp-level"))
+
+2024-12-20 23:55:05,638 - __main__ - ERROR - Error creating VM: 500: Failed to start Firecracker: timeout waiting for socket
+2024-12-21 00:03:14,855 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-21 00:03:14,857 - __main__ - INFO - Preparing custom rootfs for user 1
+2024-12-21 00:03:15,208 - __main__ - INFO - Setting up network
+2024-12-21 00:03:15,913 - __main__ - INFO - Starting Firecracker process
+2024-12-21 00:03:46,001 - __main__ - ERROR - Socket not created after 30 seconds
+2024-12-21 00:03:46,001 - __main__ - ERROR - Firecracker stderr: 
+2024-12-21 00:03:46,002 - __main__ - ERROR - Error creating VM: 500: Failed to start Firecracker: 
+2024-12-21 00:14:47,465 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-21 00:14:47,468 - __main__ - INFO - Preparing custom rootfs for user 1
+2024-12-21 00:14:47,802 - __main__ - INFO - Setting up network
+2024-12-21 00:14:48,424 - __main__ - INFO - Starting Firecracker process
+2024-12-21 00:15:18,508 - __main__ - ERROR - Socket not created after 30 seconds
+2024-12-21 00:15:18,509 - __main__ - ERROR - Firecracker stdout: 2024-12-21T00:14:48.445366691 [anonymous-instance:main] Firecracker panicked at 'Invalid instance ID: InvalidChar('_', 1)', src/firecracker/src/main.rs:291:48
+
+2024-12-21 00:15:18,509 - __main__ - ERROR - Firecracker stderr: ./start_firecracker.sh : ligne 28 : 1712707 Abandon                 (core dumped) /usr/local/bin/firecracker --api-sock "$SOCKET_PATH" --id "${USER_ID}_${VM_NAME}" --log-path "/tmp/firecracker-${USER_ID}_${VM_NAME}.log" --level Debug
+
+2024-12-21 00:15:18,509 - __main__ - ERROR - Error creating VM: 500: Failed to start Firecracker. Stderr: ./start_firecracker.sh : ligne 28 : 1712707 Abandon                 (core dumped) /usr/local/bin/firecracker --api-sock "$SOCKET_PATH" --id "${USER_ID}_${VM_NAME}" --log-path "/tmp/firecracker-${USER_ID}_${VM_NAME}.log" --level Debug
+
+2024-12-21 00:16:54,604 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-21 00:16:54,606 - __main__ - INFO - Preparing custom rootfs for user 1
+2024-12-21 00:16:54,950 - __main__ - INFO - Setting up network
+2024-12-21 00:16:55,593 - __main__ - INFO - Starting Firecracker process
+2024-12-21 00:17:25,676 - __main__ - ERROR - Socket not created after 30 seconds
+2024-12-21 00:17:25,676 - __main__ - ERROR - Firecracker stdout: 2024-12-21T00:16:55.616007557 [anonymous-instance:main] Firecracker panicked at 'Invalid instance ID: InvalidChar('_', 1)', src/firecracker/src/main.rs:291:48
+
+2024-12-21 00:17:25,677 - __main__ - ERROR - Firecracker stderr: ./start_firecracker.sh : ligne 28 : 1712942 Abandon                 (core dumped) firecracker --api-sock "$SOCKET_PATH" --id "${USER_ID}_${VM_NAME}" --log-path "/tmp/firecracker-${USER_ID}_${VM_NAME}.log" --level Debug
+
+2024-12-21 00:17:25,677 - __main__ - ERROR - Error creating VM: 500: Failed to start Firecracker. Stderr: ./start_firecracker.sh : ligne 28 : 1712942 Abandon                 (core dumped) firecracker --api-sock "$SOCKET_PATH" --id "${USER_ID}_${VM_NAME}" --log-path "/tmp/firecracker-${USER_ID}_${VM_NAME}.log" --level Debug
+
+2024-12-21 00:19:29,597 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-21 00:19:29,598 - __main__ - INFO - Preparing custom rootfs for user 1
+2024-12-21 00:19:30,029 - __main__ - INFO - Setting up network
+2024-12-21 00:19:30,682 - __main__ - INFO - Starting Firecracker process
+2024-12-21 00:19:30,784 - __main__ - INFO - Socket is available, waiting for API
+2024-12-21 00:19:32,786 - __main__ - INFO - Initializing FirecrackerAPI with socket: /tmp/firecracker-sockets/1_zaz.socket
+2024-12-21 00:19:32,786 - __main__ - INFO - Configuring machine with config: {'vcpu_count': 2, 'mem_size_mib': 1024, 'smt': False}
+2024-12-21 00:19:32,787 - __main__ - INFO - Making PUT request to /machine-config
+2024-12-21 00:19:32,821 - __main__ - INFO - Request successful: 
+2024-12-21 00:19:32,822 - __main__ - INFO - Configuring kernel with path: /opt/firecracker/vmlinux-5.10
+2024-12-21 00:19:32,822 - __main__ - INFO - Making PUT request to /boot-source
+2024-12-21 00:19:32,854 - __main__ - INFO - Request successful: 
+2024-12-21 00:19:32,855 - __main__ - INFO - Configuring rootfs with path: /opt/firecracker/rootfs/custom/1_ubuntu-24.04.ext4
+2024-12-21 00:19:32,855 - __main__ - INFO - Making PUT request to /drives/rootfs
+2024-12-21 00:19:32,896 - __main__ - INFO - Request successful: {"fault_message":"Invalid block device path: /opt/firecracker/rootfs/custom/1_ubuntu-24.04.ext4"}
+2024-12-21 00:19:32,897 - __main__ - INFO - Configuring network
+2024-12-21 00:19:32,897 - __main__ - INFO - Making PUT request to /network-interfaces/eth0
+2024-12-21 00:19:32,934 - __main__ - INFO - Request successful: 
+2024-12-21 00:19:32,935 - __main__ - INFO - VM zaz created successfully
+2024-12-21 00:27:09,582 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-21 00:27:09,584 - __main__ - INFO - Preparing custom rootfs for user 1
+2024-12-21 00:30:04,688 - __main__ - INFO - Setting up network
+2024-12-21 00:30:05,326 - __main__ - INFO - Starting Firecracker process
+2024-12-21 00:30:05,428 - __main__ - INFO - Socket is available, waiting for API
+2024-12-21 00:30:07,430 - __main__ - INFO - Initializing FirecrackerAPI with socket: /tmp/firecracker-sockets/1_zaz.socket
+2024-12-21 00:30:07,431 - __main__ - INFO - Configuring machine with config: {'vcpu_count': 2, 'mem_size_mib': 1024, 'smt': False}
+2024-12-21 00:30:07,431 - __main__ - INFO - Making PUT request to /machine-config
+2024-12-21 00:30:07,464 - __main__ - INFO - Request successful: 
+2024-12-21 00:30:07,465 - __main__ - INFO - Configuring kernel with path: /opt/firecracker/vmlinux-5.10
+2024-12-21 00:30:07,465 - __main__ - INFO - Making PUT request to /boot-source
+2024-12-21 00:30:07,497 - __main__ - INFO - Request successful: 
+2024-12-21 00:30:07,497 - __main__ - INFO - Configuring rootfs with path: /opt/firecracker/rootfs/custom/1_ubuntu-24.04.ext4
+2024-12-21 00:30:07,498 - __main__ - INFO - Making PUT request to /drives/rootfs
+2024-12-21 00:30:07,534 - __main__ - INFO - Request successful: 
+2024-12-21 00:30:07,534 - __main__ - INFO - Configuring network
+2024-12-21 00:30:07,535 - __main__ - INFO - Making PUT request to /network-interfaces/eth0
+2024-12-21 00:30:07,575 - __main__ - INFO - Request successful: 
+2024-12-21 00:30:07,575 - __main__ - INFO - VM zaz created successfully
+2024-12-21 01:54:55,419 - __main__ - INFO - Creating VM: test-vm for user: user1
+2024-12-21 01:54:55,421 - __main__ - INFO - Preparing custom vm for user user1
+2024-12-21 01:55:11,088 - __main__ - INFO - Setting up network
+2024-12-21 01:55:11,646 - __main__ - INFO - Starting Firecracker process
+2024-12-21 01:55:11,748 - __main__ - INFO - Socket is available, waiting for API
+2024-12-21 01:55:13,751 - __main__ - INFO - Initializing FirecrackerAPI with socket: /tmp/firecracker-sockets/user1_test-vm.socket
+2024-12-21 01:55:13,751 - __main__ - INFO - Configuring machine with config: {'vcpu_count': 2, 'mem_size_mib': 1024, 'smt': False}
+2024-12-21 01:55:13,752 - __main__ - INFO - Making PUT request to /machine-config
+2024-12-21 01:55:13,784 - __main__ - INFO - Request successful: 
+2024-12-21 01:55:13,784 - __main__ - INFO - Configuring kernel with path: /opt/firecracker/vmlinux-5.10
+2024-12-21 01:55:13,784 - __main__ - INFO - Making PUT request to /boot-source
+2024-12-21 01:55:13,817 - __main__ - INFO - Request successful: 
+2024-12-21 01:55:13,817 - __main__ - INFO - Configuring rootfs with path: /opt/firecracker/vm/user1/test-vm/user1_ubuntu-24.04.ext4
+2024-12-21 01:55:13,817 - __main__ - INFO - Making PUT request to /drives/rootfs
+2024-12-21 01:55:13,852 - __main__ - INFO - Request successful: 
+2024-12-21 01:55:13,853 - __main__ - INFO - Configuring network
+2024-12-21 01:55:13,853 - __main__ - INFO - Making PUT request to /network-interfaces/eth0
+2024-12-21 01:55:13,894 - __main__ - INFO - Request successful: 
+2024-12-21 01:55:13,896 - __main__ - INFO - VM test-vm created successfully
+2024-12-21 01:57:17,627 - __main__ - INFO - Starting VM: test-vm
+2024-12-21 01:57:17,628 - __main__ - INFO - Initializing FirecrackerAPI with socket: /tmp/firecracker-sockets/user1_test-vm.socket
+2024-12-21 01:57:17,628 - __main__ - INFO - Starting instance
+2024-12-21 01:57:17,629 - __main__ - INFO - Making PUT request to /actions
+2024-12-21 01:57:17,669 - __main__ - INFO - Request successful: {"fault_message":"Cannot load kernel due to invalid memory configuration or invalid kernel image: Kernel Loader: failed to load ELF kernel image"}
+2024-12-21 01:57:17,670 - __main__ - INFO - VM test-vm started successfully
+2024-12-21 02:05:08,814 - __main__ - INFO - Listing all VMs
+2024-12-21 02:05:08,815 - __main__ - ERROR - Error getting VM status: 'str' object has no attribute 'name'
+2024-12-21 02:09:26,543 - __main__ - INFO - Getting status for VM: test-vm
+2024-12-21 02:09:26,544 - __main__ - INFO - Initializing FirecrackerAPI with socket: /tmp/firecracker-sockets/user1_test-vm.socket
+2024-12-21 02:09:26,545 - __main__ - INFO - Getting machine config
+2024-12-21 02:09:26,584 - __main__ - ERROR - Error getting VM status: name 'vm_name' is not defined
+2024-12-21 02:12:31,591 - __main__ - INFO - Getting status for VM: test-vm
+2024-12-21 02:12:31,592 - __main__ - INFO - Initializing FirecrackerAPI with socket: /tmp/firecracker-sockets/user1_test-vm.socket
+2024-12-21 02:12:31,593 - __main__ - INFO - Getting machine config
+2024-12-21 02:16:32,052 - __main__ - INFO - Starting VM: test-vm
+2024-12-21 02:16:32,052 - __main__ - INFO - Starting Firecracker process
+2024-12-21 02:16:32,053 - __main__ - ERROR - Error starting VM: name 'vm_config' is not defined
+2024-12-21 02:17:50,282 - __main__ - INFO - Starting VM: test-vm
+2024-12-21 02:17:50,283 - __main__ - INFO - Starting Firecracker process
+2024-12-21 02:17:50,286 - __main__ - INFO - Socket is available, waiting for API
+2024-12-21 02:17:52,290 - __main__ - INFO - Initializing FirecrackerAPI with socket: /tmp/firecracker-sockets/user1_test-vm.socket
+2024-12-21 02:17:52,291 - __main__ - INFO - Starting instance
+2024-12-21 02:17:52,291 - __main__ - INFO - Making PUT request to /actions
+2024-12-21 02:17:52,324 - __main__ - INFO - Request successful: {"fault_message":"Cannot start microvm without kernel configuration."}
+2024-12-21 02:17:52,325 - __main__ - INFO - VM test-vm started successfully
+2024-12-21 02:18:14,023 - __main__ - INFO - Getting status for VM: test-vm
+2024-12-21 02:18:14,024 - __main__ - INFO - Initializing FirecrackerAPI with socket: /tmp/firecracker-sockets/user1_test-vm.socket
+2024-12-21 02:18:14,024 - __main__ - INFO - Getting machine config
+2024-12-21 02:19:21,275 - __main__ - INFO - Listing all VMs
+2024-12-21 02:19:21,276 - __main__ - ERROR - Error getting VM status: 'str' object has no attribute 'name'
+2024-12-21 02:26:17,589 - __main__ - INFO - Getting status for VM: test-vm
+2024-12-21 02:26:17,589 - __main__ - INFO - Initializing FirecrackerAPI with socket: /tmp/firecracker-sockets/user1_test-vm.socket
+2024-12-21 02:26:17,590 - __main__ - INFO - Getting machine config

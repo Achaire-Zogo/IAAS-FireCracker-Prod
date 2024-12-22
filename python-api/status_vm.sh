@@ -16,6 +16,7 @@ VM_NAME=$2
 VM_DIR="/opt/firecracker/vm/${USER_ID}/${VM_NAME}"
 SOCKET_PATH="/tmp/firecracker-sockets/${USER_ID}_${VM_NAME}.socket"
 LOG_PATH="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.log"
+VM_PID="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.pid"
 
 # Vérifier si la VM existe
 if [ ! -d "${VM_DIR}" ]; then
@@ -25,18 +26,25 @@ fi
 
 # Vérifier si la VM est en cours d'exécution
 if [ -S "${SOCKET_PATH}" ]; then
-    # Obtenir les métriques via l'API Firecracker
-    response=$(curl --unix-socket "${SOCKET_PATH}" -s \
-      -X GET 'http://localhost/metrics' \
-      -H 'Accept: application/json')
-    
-    if check_curl_response "$response" "Getting VM metrics" ${LINENO} "$LOG_PATH"; then
-        echo "{\"status\": \"running\", \"metrics\": ${response}}"
-    else
-        get_last_error "$LOG_PATH"
-        echo "{\"status\": \"error\", \"message\": \"Failed to get metrics\"}"
-        exit 1
+    # Vérifier si le processus Firecracker est en cours d'exécution
+    pid_file="${VM_PID}"
+    if [ -f "$pid_file" ]; then
+        pid=$(cat "$pid_file")
+        if ps -p "$pid" > /dev/null; then
+            # Obtenir la configuration de la machine
+            machine_config=$(curl --unix-socket "${SOCKET_PATH}" -s \
+              -X GET 'http://localhost/machine-config' \
+              -H 'Accept: application/json')
+            
+            
+            if [ $? -eq 0 ]; then
+                echo "{\"status\": \"running\", \"machine_config\": ${machine_config}}"
+                exit 0
+            fi
+        fi
     fi
+    # Si on arrive ici, c'est que la VM n'est pas vraiment en cours d'exécution
+    echo "{\"status\": \"stopped\"}"
 else
     echo "{\"status\": \"stopped\"}"
 fi

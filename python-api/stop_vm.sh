@@ -15,14 +15,52 @@ VM_NAME=$2
 # Définir les chemins
 SOCKET_PATH="/tmp/firecracker-sockets/${USER_ID}_${VM_NAME}.socket"
 LOG_PATH="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.log"
+PID_FILE="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.pid"
+TAP_DEVICE="tap_${USER_ID}_${VM_NAME}"
 
-# Vérifier que le socket existe
+# Fonction de nettoyage
+cleanup() {
+    local exit_code=$?
+    echo "Nettoyage des ressources..."
+
+    # 1. Supprimer le socket s'il existe
+    if [ -S "${SOCKET_PATH}" ]; then
+        rm -f "${SOCKET_PATH}"
+        echo "Socket supprimé: ${SOCKET_PATH}"
+    fi
+
+    # 2. Arrêter le processus Firecracker
+    if [ -f "${PID_FILE}" ]; then
+        local pid=$(cat "${PID_FILE}")
+        if ps -p "${pid}" > /dev/null; then
+            kill "${pid}" 2>/dev/null || true
+            echo "Processus Firecracker arrêté (PID: ${pid})"
+        fi
+        rm -f "${PID_FILE}"
+        echo "Fichier PID supprimé: ${PID_FILE}"
+    fi
+
+    # 3. Supprimer l'interface réseau tap
+    if ip link show "${TAP_DEVICE}" &>/dev/null; then
+        ip link set "${TAP_DEVICE}" down
+        ip link delete "${TAP_DEVICE}" type tap
+        echo "Interface réseau supprimée: ${TAP_DEVICE}"
+    fi
+
+    exit ${exit_code}
+}
+
+# Enregistrer la fonction de nettoyage pour être exécutée à la sortie
+trap cleanup EXIT
+
+# Vérifier si la VM est en cours d'exécution
 if [ ! -S "${SOCKET_PATH}" ]; then
-    echo "Error: Socket not found at ${SOCKET_PATH}"
-    exit 1
+    echo "La VM n'est pas en cours d'exécution"
+    exit 0
 fi
 
-# Arrêter la VM via l'API Firecracker
+# Envoyer la commande d'arrêt à la VM
+echo "Envoi de la commande d'arrêt..."
 response=$(curl --unix-socket "${SOCKET_PATH}" -i \
   -X PUT 'http://localhost/actions' \
   -H 'Accept: application/json' \
@@ -31,9 +69,28 @@ response=$(curl --unix-socket "${SOCKET_PATH}" -i \
     "action_type": "SendCtrlAltDel"
   }')
 
-check_curl_response "$response" "Stopping VM" ${LINENO} "$LOG_PATH" || {
-    get_last_error "$LOG_PATH"
-    exit 1
-}
+# Vérifier la réponse
+if ! check_curl_response "$response" "Stopping VM" ${LINENO} "$LOG_PATH"; then
+    echo "Échec de l'arrêt gracieux, tentative d'arrêt forcé..."
+    response=$(curl --unix-socket "${SOCKET_PATH}" -i \
+      -X PUT 'http://localhost/actions' \
+      -H 'Accept: application/json' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "action_type": "InstanceHalt"
+      }')
+fi
 
-echo "VM stopped successfully"
+# Attendre que le processus se termine
+if [ -f "${PID_FILE}" ]; then
+    pid=$(cat "${PID_FILE}")
+    echo "Attente de l'arrêt du processus (PID: ${pid})..."
+    for i in {1..30}; do
+        if ! ps -p "${pid}" > /dev/null; then
+            break
+        fi
+        sleep 1
+    done
+fi
+
+echo "Arrêt de la VM terminé"

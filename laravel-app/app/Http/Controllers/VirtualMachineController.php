@@ -55,9 +55,7 @@ class VirtualMachineController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'os_type' => 'required|in:ubuntu,debian,centos',
-            'vcpu_count' => 'required|integer|min:1|max:8',
-            'mem_size_mib' => 'required|integer|min:512|max:16384'
+            'os_type' => 'required',
         ]);
 
         try {
@@ -83,7 +81,7 @@ class VirtualMachineController extends Controller
                 'user_id' => Auth::id(),
                 'ssh_key_id' => $sshKey->id
             ]);
-            
+
             $vm->save();
 
             // Configurer la VM avec Containerd
@@ -96,7 +94,7 @@ class VirtualMachineController extends Controller
             ];
 
             $result = $this->containerdService->createVM($validated['name'], $config);
-            
+
             // Mettre à jour le statut de la VM
             $vm->update(['status' => 'running']);
 
@@ -111,7 +109,7 @@ class VirtualMachineController extends Controller
             if (isset($sshKey)) {
                 $sshKey->delete();
             }
-            
+
             return redirect()->route('dashboard')
                 ->with('error', 'Échec de la création de la machine virtuelle : ' . $e->getMessage());
         }
@@ -120,11 +118,11 @@ class VirtualMachineController extends Controller
     public function start($id)
     {
         $vm = VirtualMachine::findOrFail($id);
-        
+
         try {
             $this->containerdService->startVM($vm->name);
             $vm->update(['status' => 'running']);
-            
+
             return redirect()->route('dashboard')
                 ->with('success', 'Machine virtuelle démarrée avec succès.');
         } catch (RuntimeException $e) {
@@ -136,11 +134,11 @@ class VirtualMachineController extends Controller
     public function stop($id)
     {
         $vm = VirtualMachine::findOrFail($id);
-        
+
         try {
             $this->containerdService->stopVM($vm->name);
             $vm->update(['status' => 'stopped']);
-            
+
             return redirect()->route('dashboard')
                 ->with('success', 'Machine virtuelle arrêtée avec succès.');
         } catch (RuntimeException $e) {
@@ -152,7 +150,7 @@ class VirtualMachineController extends Controller
     public function destroy($id)
     {
         $vm = VirtualMachine::findOrFail($id);
-        
+
         try {
             // Arrêter la VM si elle est en cours d'exécution
             if ($vm->status === 'running') {
@@ -169,7 +167,7 @@ class VirtualMachineController extends Controller
 
             // Supprimer la VM de la base de données
             $vm->delete();
-            
+
             return redirect()->route('dashboard')
                 ->with('success', 'Machine virtuelle supprimée avec succès.');
         } catch (RuntimeException $e) {
@@ -181,7 +179,7 @@ class VirtualMachineController extends Controller
     public function getSSHDetails($id)
     {
         $vm = VirtualMachine::findOrFail($id);
-        
+
         if (!$vm->sshKey) {
             return response()->json([
                 'error' => 'Aucune clé SSH associée à cette machine virtuelle'
@@ -207,7 +205,7 @@ class VirtualMachineController extends Controller
     private function getRootfsPath(string $osType): string
     {
         $basePath = config('services.containerd.rootfs_path');
-        
+
         return match($osType) {
             'ubuntu' => "{$basePath}/ubuntu-22.04.ext4",
             'debian' => "{$basePath}/debian-11.ext4",

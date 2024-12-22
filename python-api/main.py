@@ -39,6 +39,9 @@ class VMConfig(BaseModel):
 class VMStartConfig(BaseModel):
     name: str
     user_id: str  # Identifiant unique de l'utilisateur
+    cpu_count: int
+    memory_size_mib: int
+    disk_size_gb: int
 
 class VMStopConfig(BaseModel):
     name: str
@@ -65,6 +68,57 @@ class CommandResponse(BaseModel):
     data: Optional[dict] = None
 
 class FirecrackerAPI:
+    def __init__(self, socket_path: str):
+        self.socket_path = socket_path
+
+    def _make_request(self, method: str, path: str, data: dict = None) -> dict:
+        try:
+            curl_cmd = [
+                "curl",
+                "-X", method,
+                "--unix-socket", self.socket_path,
+                f"http://localhost{path}"
+            ]
+            
+            if data:
+                curl_cmd.extend(["-H", "Content-Type: application/json"])
+                curl_cmd.extend(["-d", json.dumps(data)])
+            
+            result = subprocess.run(
+                curl_cmd,
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                try:
+                    return json.loads(result.stdout) if result.stdout else {}
+                except json.JSONDecodeError:
+                    return {"raw_output": result.stdout}
+            else:
+                logger.error(f"Curl command failed: {result.stderr}")
+                return {"error": result.stderr}
+                
+        except Exception as e:
+            logger.error(f"Error making request: {str(e)}")
+            return {"error": str(e)}
+
+    def get_metrics(self) -> Dict:
+        """
+        Récupère les métriques de la VM via l'API Firecracker.
+        """
+        try:
+            logger.info("Getting VM metrics")
+            machine_config = self._make_request("GET", "/machine-config")
+            # vm_state = self._make_request("GET", "/vm")
+            
+            return {
+                "machine_config": machine_config,
+                # "state": vm_state
+            }
+        except Exception as e:
+            logger.error(f"Error getting metrics: {str(e)}")
+            return {}
 
     def start_instance(self) -> bool:
         try:
@@ -77,7 +131,14 @@ class FirecrackerAPI:
     def stop_instance(self) -> bool:
         try:
             logger.info("Stopping instance")
-            return self._make_request("PUT", "/actions", {"action_type": "SendCtrlAltDel"})
+            # D'abord, envoyer un signal d'arrêt gracieux
+            self._make_request("PUT", "/actions", {"action_type": "SendCtrlAltDel"})
+            
+            # Attendre quelques secondes pour l'arrêt gracieux
+            time.sleep(5)
+            
+            # Ensuite, forcer l'arrêt si nécessaire
+            return self._make_request("PUT", "/actions", {"action_type": "InstanceHalt"})
         except Exception as e:
             logger.error(f"Error stopping instance: {str(e)}")
             return False
@@ -247,75 +308,64 @@ async def create_vm(vm_config: VMConfig, background_tasks: BackgroundTasks):
 
 @app.post("/vm/start", response_model=CommandResponse)
 async def start_vm(vm_start_config: VMStartConfig):
+    """
+    Démarre une VM existante.
+    """
     try:
-        socket_path = f"/tmp/firecracker-sockets/{vm_start_config.user_id}_{vm_start_config.name}.socket"
-        vm_path = f"/opt/firecracker/vm/{vm_start_config.user_id}/{vm_start_config.name}"
-        
-        if not os.path.exists(vm_path):
+        # Vérifier si la VM existe
+        vm_dir = os.path.join("/opt/firecracker/vm", vm_start_config.user_id, str(vm_start_config.name))
+        if not os.path.exists(vm_dir):
             raise HTTPException(status_code=404, detail="VM not found")
 
-        # Vérifier si le socket existe déjà
-        if not os.path.exists(socket_path):
-            # Démarrer le processus Firecracker seulement si le socket n'existe pas
-            start_firecracker_process(vm_start_config.user_id, vm_start_config.name, socket_path)
-            
-            # Attendre que le socket soit disponible
-            timeout = 30
-            while timeout > 0 and not os.path.exists(socket_path):
-                time.sleep(1)
-                timeout -= 1
-            if timeout <= 0:
-                raise HTTPException(status_code=500, detail="Timeout waiting for Firecracker socket")
+        # Déterminer le type d'OS
+        os_type = None
+        for file in os.listdir(vm_dir):
+            if file.endswith(".ext4"):
+                os_type = file.replace(".ext4", "")
+                break
 
-            # Reconfigurer la VM
-            os_type = next((f.split('.')[0] for f in os.listdir(vm_path) if f.endswith('.ext4')), None)
-            if not os_type:
-                raise HTTPException(status_code=500, detail="Could not determine OS type")
+        if os_type is None:
+            raise HTTPException(status_code=404, detail="OS type not found")
 
-            # Récupérer la clé SSH depuis le fichier de configuration
-            ssh_key_path = os.path.join(vm_path, "ssh_key.pub")
-            if os.path.exists(ssh_key_path):
-                with open(ssh_key_path, 'r') as f:
-                    ssh_public_key = f.read().strip()
-            else:
-                ssh_public_key = ""
+        # Définir le chemin du socket unique pour cette VM
+        socket_dir = "/tmp/firecracker-sockets"
+        os.makedirs(socket_dir, exist_ok=True)
+        os.chmod(socket_dir, 0o777)  # Donner les permissions nécessaires
 
-            # Reconfigurer la VM
-            setting_result = subprocess.run(
-                ["./setting_vm_image.sh", 
-                 os_type,
-                 vm_start_config.user_id,
-                 ssh_public_key,
-                 "5",  # disk_size_gb par défaut
-                 vm_start_config.name,
-                 "2",  # cpu_count par défaut
-                 "1024"  # memory_size_mib par défaut
-                ],
-                capture_output=True,
-                text=True
-            )
-            if setting_result.returncode != 0:
-                logger.error(f"Failed to reconfigure VM: {setting_result.stderr}")
-                raise HTTPException(status_code=500, detail="Failed to reconfigure VM")
+        socket_path = f"{socket_dir}/{vm_start_config.user_id}_{vm_start_config.name}.socket"
+        
+        # Supprimer l'ancien socket s'il existe
+        if os.path.exists(socket_path):
+            os.unlink(socket_path)
+
+        # Démarrer le processus Firecracker
+        start_firecracker_process(vm_start_config.user_id, vm_start_config.name, socket_path)
 
         # Démarrer la VM
-        logger.info(f"Starting VM {vm_start_config.name}")
+        logger.info(f"Starting VM {str(vm_start_config.name)}")
         start_result = subprocess.run(
-            ["./start_vm.sh", vm_start_config.user_id, vm_start_config.name],
+            ["./start_vm.sh",
+             vm_start_config.user_id,
+             str(vm_start_config.name),
+             os_type,
+             str(vm_start_config.cpu_count),
+             str(vm_start_config.memory_size_mib)
+            ],
             capture_output=True,
             text=True
         )
-        
+
         if start_result.returncode != 0:
             logger.error(f"Failed to start VM: {start_result.stderr}")
-            raise HTTPException(status_code=500, detail="Failed to start VM")
+            raise HTTPException(status_code=500, detail=f"Failed to start VM: {start_result.stderr}")
 
-        logger.info(f"VM {vm_start_config.name} started successfully")
         return CommandResponse(
             success=True,
             message=f"VM {vm_start_config.name} started successfully"
         )
 
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error(f"Error starting VM: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -436,6 +486,71 @@ async def list_vms():
 
     except Exception as e:
         logger.error(f"Error listing VMs: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/vm/{user_id}/{vm_name}/metrics")
+async def get_vm_metrics(user_id: str, vm_name: str):
+    """
+    Récupère les métriques d'une VM spécifique.
+    """
+    try:
+        # Construire le chemin du socket
+        socket_path = f"/tmp/firecracker-sockets/{user_id}_{vm_name}.socket"
+        
+        # Vérifier si la VM existe et est en cours d'exécution
+        vm_dir = os.path.join("/opt/firecracker/vm", user_id, vm_name)
+        pid_file = os.path.join('/opt/firecracker/logs', "firecracker-{user_id}_{vm_name}.pid")
+        if not os.path.exists(vm_dir):
+            raise HTTPException(status_code=404, detail="VM not found")
+            
+        if not os.path.exists(socket_path):
+            return {
+                "success": True,
+                "data": {
+                    "vm_name": vm_name,
+                    "state": "stopped"
+                }
+            }
+
+        # Vérifier si le processus est en cours d'exécution
+        if os.path.exists(pid_file):
+            with open(pid_file, 'r') as f:
+                pid = f.read().strip()
+                try:
+                    os.kill(int(pid), 0)  # Vérifie si le processus existe
+                except OSError:
+                    return {
+                        "success": True,
+                        "data": {
+                            "vm_name": vm_name,
+                            "state": "stopped"
+                        }
+                    }
+
+        # Créer une instance de l'API Firecracker
+        api = FirecrackerAPI(socket_path)
+        
+        # Récupérer les métriques
+        metrics = api.get_metrics()
+        
+        if "error" in metrics:
+            raise HTTPException(status_code=500, detail=f"Failed to get metrics: {metrics['error']}")
+            
+        # Formater la réponse
+        return {
+            "success": True,
+            "data": {
+                "vm_name": vm_name,
+                "state": "running",
+                "machine_config": metrics.get("machine_config", {}),
+                # "vm_state": metrics.get("state", {})
+            }
+        }
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error getting VM metrics: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

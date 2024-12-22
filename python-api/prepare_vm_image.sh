@@ -1,13 +1,5 @@
 #!/bin/bash
 
-# Download kernel if not exists
-# if [ ! -f "/opt/firecracker/vmlinux-5.10" ]; then
-#     sudo mkdir -p /opt/firecracker
-#     wget -O vmlinux.tmp "https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.11/x86_64/vmlinux-5.10"
-#     sudo mv vmlinux.tmp /opt/firecracker/vmlinux-5.10
-#     sudo chmod +x /opt/firecracker/vmlinux-5.10
-# fi
-
 # Usage: ./prepare_vm_image.sh <os_type> <user_id> <ssh_public_key> <disk_size_gb> <vm_name> <root_password>
 # Example: ./prepare_vm_image.sh ubuntu-24.04 user123 "ssh-rsa AAAA..." 5 "zaz" "MySecurePass123"
 
@@ -60,7 +52,6 @@ sudo cp "${ROOTFS_DIR}/${OS_TYPE}.squashfs.upstream" "${VM_DIR}/"
 sudo cp "${BASE_DIR}/vmlinux-5.10.225" "${VM_DIR}/"
 sudo chmod -R 777 "${VM_DIR}/vmlinux-5.10.225"
 
-
 cd "${VM_DIR}"
 
 # Extract base image
@@ -73,7 +64,15 @@ echo "${SSH_PUBLIC_KEY}" > squashfs-root/root/.ssh/authorized_keys
 # Set root password provided by user
 echo "root:${ROOT_PASSWORD}" | sudo chroot squashfs-root chpasswd
 
-# create ext4 filesystem image
+# Enable and configure SSH
+sudo chroot squashfs-root systemctl enable ssh
+sudo chroot squashfs-root sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+sudo chroot squashfs-root sed -i 's/#PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sudo chroot squashfs-root systemctl restart ssh
+
+echo 'nameserver 8.8.8.8' > squashfs-root/etc/resolv.conf
+
+# Create ext4 filesystem image
 CUSTOM_VM_DIR="${VM_DIR}/${OS_TYPE}.ext4"
 sudo chown -R root:root squashfs-root
 truncate -s ${DISK_SIZE_GB}G "${OS_TYPE}.ext4"

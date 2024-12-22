@@ -41,7 +41,7 @@ if [ ! -f "${CUSTOM_VM}" ]; then
 fi
 
 # Configurer le réseau
-TAP_DEV="tap0"
+TAP_DEV="tap_${USER_ID}_${VM_NAME}"
 TAP_IP="172.16.0.1"
 VM_IP="172.16.0.2"
 MASK_SHORT="/30"
@@ -134,6 +134,20 @@ check_curl_response "$response" "Configuring network interface" ${LINENO} "$LOG_
     exit 1
 }
 
+# Configuration du disque
+response=$(curl --unix-socket "${SOCKET_PATH}" -i \
+  -X PUT 'http://localhost/balloon' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "amount_mib": 512,
+    "deflate_on_oom": true,
+    "stats_polling_interval_s": 1
+  }')
+
+check_curl_response "$response" "Configuring balloon" ${LINENO} "$LOG_PATH" || {
+    get_last_error "$LOG_PATH"
+    exit 1
+}
 
 
 echo "VM configuration completed successfully"

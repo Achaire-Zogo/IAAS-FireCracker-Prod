@@ -16,37 +16,70 @@ VM_NAME=$2
 VM_DIR="/opt/firecracker/vm/${USER_ID}/${VM_NAME}"
 SOCKET_PATH="/tmp/firecracker-sockets/${USER_ID}_${VM_NAME}.socket"
 LOG_PATH="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.log"
+PID_FILE="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.pid"
+TAP_DEVICE="tap_${USER_ID}_${VM_NAME}"
+ROOTFS_PATH="${VM_DIR}/rootfs.ext4"
+KERNEL_PATH="${VM_DIR}/vmlinux"
+
+# Vérifier si la VM existe
+if [ ! -d "${VM_DIR}" ]; then
+    echo "La VM n'existe pas"
+    exit 0
+fi
+
+# Fonction pour arrêter la VM si elle est en cours d'exécution
+stop_vm() {
+    if [ -S "${SOCKET_PATH}" ] && [ -f "${PID_FILE}" ]; then
+        echo "Arrêt de la VM en cours..."
+        # Appeler le script d'arrêt
+        "$(dirname "$0")/stop_vm.sh" "${USER_ID}" "${VM_NAME}"
+        # Attendre que la VM soit complètement arrêtée
+        sleep 5
+    fi
+}
+
+# Fonction pour nettoyer les ressources réseau
+cleanup_network() {
+    # Supprimer l'interface tap si elle existe
+    if ip link show "${TAP_DEVICE}" &>/dev/null; then
+        echo "Suppression de l'interface réseau ${TAP_DEVICE}..."
+        ip link set "${TAP_DEVICE}" down
+        ip link delete "${TAP_DEVICE}" type tap
+    fi
+}
+
+# Fonction pour supprimer les fichiers
+cleanup_files() {
+    echo "Suppression des fichiers..."
+    
+    # Supprimer le socket s'il existe
+    [ -S "${SOCKET_PATH}" ] && rm -f "${SOCKET_PATH}"
+    
+    # Supprimer le fichier PID s'il existe
+    [ -f "${PID_FILE}" ] && rm -f "${PID_FILE}"
+    
+    # Supprimer le fichier de log s'il existe
+    [ -f "${LOG_PATH}" ] && rm -f "${LOG_PATH}"
+    
+    # Supprimer les fichiers de configuration s'ils existent
+    [ -f "${VM_DIR}/config.json" ] && rm -f "${VM_DIR}/config.json"
+    [ -f "${VM_DIR}/vmlinux" ] && rm -f "${VM_DIR}/vmlinux"
+    [ -f "${VM_DIR}/rootfs.ext4" ] && rm -f "${VM_DIR}/rootfs.ext4"
+    
+    # Supprimer le répertoire de la VM
+    if [ -d "${VM_DIR}" ]; then
+        rm -rf "${VM_DIR}"
+        echo "Répertoire de la VM supprimé: ${VM_DIR}"
+    fi
+}
 
 # Arrêter la VM si elle est en cours d'exécution
-if [ -S "${SOCKET_PATH}" ]; then
-    response=$(curl --unix-socket "${SOCKET_PATH}" -i \
-      -X PUT 'http://localhost/actions' \
-      -H 'Accept: application/json' \
-      -H 'Content-Type: application/json' \
-      -d '{
-        "action_type": "SendCtrlAltDel"
-      }')
+stop_vm
 
-    check_curl_response "$response" "Stopping VM before deletion" ${LINENO} "$LOG_PATH" || {
-        get_last_error "$LOG_PATH"
-        echo "Warning: Failed to stop VM gracefully, proceeding with deletion"
-    }
-    sleep 2  # Attendre que la VM s'arrête
-fi
+# Nettoyer les ressources réseau
+cleanup_network
 
-# Supprimer le socket s'il existe
-if [ -S "${SOCKET_PATH}" ]; then
-    rm -f "${SOCKET_PATH}"
-fi
+# Supprimer tous les fichiers
+cleanup_files
 
-# Supprimer les logs s'ils existent
-if [ -f "${LOG_PATH}" ]; then
-    rm -f "${LOG_PATH}"
-fi
-
-# Supprimer le répertoire de la VM
-if [ -d "${VM_DIR}" ]; then
-    rm -rf "${VM_DIR}"
-fi
-
-echo "VM deleted successfully"
+echo "VM supprimée avec succès"

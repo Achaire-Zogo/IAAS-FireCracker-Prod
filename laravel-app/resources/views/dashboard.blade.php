@@ -1,9 +1,9 @@
 <x-app-layout>
     <div class="container py-4">
-        <div class="row mb-4">
+        <div class="mb-4 row">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h2 class="h4 mb-0">{{ __('Virtual Machines') }}</h2>
+                    <h2 class="mb-0 h4">{{ __('Virtual Machines') }}</h2>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createVMModal">
                         <i class="bi bi-plus-circle me-2"></i>{{ __('New VM') }}
                     </button>
@@ -11,44 +11,44 @@
             </div>
         </div>
 
-        <div class="row mb-4">
+        <div class="mb-4 row">
             <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center">
+                <div class="border-0 shadow-sm card">
+                    <div class="text-center card-body">
                         <h3 class="display-4 text-primary">{{ $virtualMachines->count() }}</h3>
-                        <p class="text-muted mb-0">{{ __('Total VMs') }}</p>
+                        <p class="mb-0 text-muted">{{ __('Total VMs') }}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center">
+                <div class="border-0 shadow-sm card">
+                    <div class="text-center card-body">
                         <h3 class="display-4 text-success">{{ $virtualMachines->where('status', 'running')->count() }}</h3>
-                        <p class="text-muted mb-0">{{ __('Running') }}</p>
+                        <p class="mb-0 text-muted">{{ __('Running') }}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center">
+                <div class="border-0 shadow-sm card">
+                    <div class="text-center card-body">
                         <h3 class="display-4 text-secondary">{{ $virtualMachines->where('status', 'stopped')->count() }}</h3>
-                        <p class="text-muted mb-0">{{ __('Stopped') }}</p>
+                        <p class="mb-0 text-muted">{{ __('Stopped') }}</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm">
+        <div class="border-0 shadow-sm card">
             <div class="card-body">
                 @if($virtualMachines->isEmpty())
-                    <div class="text-center py-4">
+                    <div class="py-4 text-center">
                         <i class="bi bi-cloud-slash display-4 text-muted"></i>
                         <p class="mt-3 mb-0">{{ __('No virtual machines found') }}</p>
                         <p class="text-muted">{{ __('Click the "New VM" button to create your first virtual machine.') }}</p>
                     </div>
                 @else
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table align-middle table-hover">
                             <thead>
                                 <tr>
                                     <th>{{ __('Name') }}</th>
@@ -72,7 +72,7 @@
                                         <td>
                                             <div class="btn-group">
                                                 @if($vm->status === 'running')
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    <button type="button" class="btn btn-sm btn-outline-danger"
                                                             onclick="document.getElementById('stop-form-{{ $vm->id }}').submit()">
                                                         <i class="bi bi-stop-circle"></i>
                                                     </button>
@@ -82,28 +82,28 @@
                                                         <i class="bi bi-play-circle"></i>
                                                     </button>
                                                 @endif
-                                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
                                                         data-bs-toggle="modal" data-bs-target="#sshModal{{ $vm->id }}">
                                                     <i class="bi bi-terminal"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
                                                         onclick="confirmDelete({{ $vm->id }})">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
 
-                                            <form id="start-form-{{ $vm->id }}" 
-                                                  action="{{ route('virtual-machines.start', $vm->id) }}" 
+                                            <form id="start-form-{{ $vm->id }}"
+                                                  action="{{ route('virtual-machines.start', $vm->id) }}"
                                                   method="POST" class="d-none">
                                                 @csrf
                                             </form>
-                                            <form id="stop-form-{{ $vm->id }}" 
-                                                  action="{{ route('virtual-machines.stop', $vm->id) }}" 
+                                            <form id="stop-form-{{ $vm->id }}"
+                                                  action="{{ route('virtual-machines.stop', $vm->id) }}"
                                                   method="POST" class="d-none">
                                                 @csrf
                                             </form>
-                                            <form id="delete-form-{{ $vm->id }}" 
-                                                  action="{{ route('virtual-machines.destroy', $vm->id) }}" 
+                                            <form id="delete-form-{{ $vm->id }}"
+                                                  action="{{ route('virtual-machines.destroy', $vm->id) }}"
                                                   method="POST" class="d-none">
                                                 @csrf
                                                 @method('DELETE')
@@ -132,7 +132,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="name" class="form-label">{{ __('VM Name') }}</label>
-                            <input type="text" class="form-control @error('name') is-invalid @enderror" 
+                            <input type="text" class="form-control @error('name') is-invalid @enderror"
                                    id="name" name="name" value="{{ old('name') }}" required>
                             @error('name')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -145,7 +145,7 @@
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="os_type" id="ubuntu" value="ubuntu" required>
                                     <label class="btn btn-outline-light w-100 text-start h-100" for="ubuntu">
-                                        <img src="{{ asset('assets/images/ubuntu.svg') }}" alt="Ubuntu" class="os-logo mb-2">
+                                        <img src="{{ asset('assets/images/ubuntu.svg') }}" alt="Ubuntu" class="mb-2 os-logo">
                                         <div>
                                             <strong>Ubuntu</strong>
                                             <small class="d-block text-muted">22.04 LTS</small>
@@ -155,7 +155,7 @@
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="os_type" id="debian" value="debian">
                                     <label class="btn btn-outline-light w-100 text-start h-100" for="debian">
-                                        <img src="{{ asset('assets/images/debian.svg') }}" alt="Debian" class="os-logo mb-2">
+                                        <img src="{{ asset('assets/images/debian.svg') }}" alt="Debian" class="mb-2 os-logo">
                                         <div>
                                             <strong>Debian</strong>
                                             <small class="d-block text-muted">11 Bullseye</small>
@@ -165,7 +165,7 @@
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="os_type" id="centos" value="centos">
                                     <label class="btn btn-outline-light w-100 text-start h-100" for="centos">
-                                        <img src="{{ asset('assets/images/centos.svg') }}" alt="CentOS" class="os-logo mb-2">
+                                        <img src="{{ asset('assets/images/centos.svg') }}" alt="CentOS" class="mb-2 os-logo">
                                         <div>
                                             <strong>CentOS</strong>
                                             <small class="d-block text-muted">Stream 9</small>
@@ -179,9 +179,9 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="mb-3 col-md-6">
                                 <label for="vcpu_count" class="form-label">{{ __('vCPUs') }}</label>
-                                <select class="form-select @error('vcpu_count') is-invalid @enderror" 
+                                <select class="form-select @error('vcpu_count') is-invalid @enderror"
                                         id="vcpu_count" name="vcpu_count" required>
                                     @foreach([1, 2, 4, 8] as $cpu)
                                         <option value="{{ $cpu }}">{{ $cpu }} {{ __('Core(s)') }}</option>
@@ -192,9 +192,9 @@
                                 @enderror
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="mb-3 col-md-6">
                                 <label for="mem_size_mib" class="form-label">{{ __('Memory (MB)') }}</label>
-                                <select class="form-select @error('mem_size_mib') is-invalid @enderror" 
+                                <select class="form-select @error('mem_size_mib') is-invalid @enderror"
                                         id="mem_size_mib" name="mem_size_mib" required>
                                     @foreach([512, 1024, 2048, 4096] as $mem)
                                         <option value="{{ $mem }}">{{ $mem }} MB</option>
@@ -230,7 +230,7 @@
                         <div class="mb-3">
                             <label class="form-label">{{ __('SSH Command') }}</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" readonly 
+                                <input type="text" class="form-control" readonly
                                        value="ssh -p {{ $vm->ssh_port }} root@{{ $vm->ip_address }}">
                                 <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this)">
                                     <i class="bi bi-clipboard"></i>
@@ -243,7 +243,7 @@
                                 <div class="form-control" style="height: auto;">
                                     <pre class="mb-0" style="white-space: pre-wrap;">{{ $vm->sshKey->private_key }}</pre>
                                 </div>
-                                <button class="btn btn-outline-primary btn-sm mt-2" onclick="downloadPrivateKey({{ $vm->id }})">
+                                <button class="mt-2 btn btn-outline-primary btn-sm" onclick="downloadPrivateKey({{ $vm->id }})">
                                     <i class="bi bi-download me-2"></i>{{ __('Download Private Key') }}
                                 </button>
                             </div>
@@ -260,13 +260,13 @@
             border: 1px solid #dee2e6;
             transition: all 0.2s ease-in-out;
         }
-        
+
         .btn-check:checked + .btn-outline-light {
             background-color: rgba(var(--bs-primary-rgb), 0.1);
             border-color: var(--bs-primary);
             color: var(--bs-body-color);
         }
-        
+
         .btn-check + .btn-outline-light:hover {
             background-color: rgba(var(--bs-primary-rgb), 0.05);
             border-color: var(--bs-primary);
@@ -305,11 +305,11 @@
             const input = button.parentElement.querySelector('input');
             input.select();
             document.execCommand('copy');
-            
+
             const icon = button.querySelector('i');
             icon.classList.remove('bi-clipboard');
             icon.classList.add('bi-clipboard-check');
-            
+
             setTimeout(() => {
                 icon.classList.remove('bi-clipboard-check');
                 icon.classList.add('bi-clipboard');

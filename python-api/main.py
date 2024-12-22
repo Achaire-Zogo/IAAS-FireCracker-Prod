@@ -31,6 +31,7 @@ class VMConfig(BaseModel):
     disk_size_gb: int
     os_type: str  # 'ubuntu-24.04', 'ubuntu-22.04', 'alpine', 'centos'
     ssh_public_key: Optional[str] = None  # Clé SSH publique de l'utilisateur
+    root_password: Optional[str] = None
     tap_device: Optional[str] = "tap0"
     tap_ip: Optional[str] = "172.16.0.1"
     vm_ip: Optional[str] = "172.16.0.2"
@@ -158,6 +159,19 @@ async def create_vm(vm_config: VMConfig, background_tasks: BackgroundTasks):
     try:
         logger.info(f"Creating VM: {vm_config.name} for user: {vm_config.user_id}")
         
+        # Valider les paramètres
+        if not vm_config.ssh_public_key and not vm_config.root_password:
+            raise HTTPException(
+                status_code=400, 
+                detail="Either ssh_public_key or root_password must be provided"
+            )
+            
+        if not vm_config.root_password:
+            vm_config.root_password = "FirecrackerVM@2024"  # Mot de passe par défaut si non fourni
+            
+        if not vm_config.ssh_public_key:
+            vm_config.ssh_public_key = ""  # Clé SSH vide si non fournie
+
         # Créer le dossier pour les sockets s'il n'existe pas
         socket_dir = "/tmp/firecracker-sockets"
         os.makedirs(socket_dir, exist_ok=True)
@@ -184,11 +198,15 @@ async def create_vm(vm_config: VMConfig, background_tasks: BackgroundTasks):
         custom_vm = f"/opt/firecracker/vm/{vm_config.user_id}/{vm_config.name}/{vm_config.os_type}.ext4"
         if not os.path.exists(custom_vm):
             logger.info(f"Preparing custom vm for user {vm_config.user_id}")
-            if not vm_config.ssh_public_key:
-                raise HTTPException(status_code=400, detail="SSH public key is required")
-            
             prepare_result = subprocess.run(
-                ["./prepare_vm_image.sh", vm_config.os_type, vm_config.user_id, vm_config.ssh_public_key, str(vm_config.disk_size_gb), str(vm_config.name)],
+                ["./prepare_vm_image.sh", 
+                 vm_config.os_type,
+                 vm_config.user_id,
+                 vm_config.ssh_public_key,
+                 str(vm_config.disk_size_gb),
+                 vm_config.name,
+                 vm_config.root_password
+                ],
                 capture_output=True,
                 text=True
             )
@@ -205,7 +223,7 @@ async def create_vm(vm_config: VMConfig, background_tasks: BackgroundTasks):
                  vm_config.user_id, 
                  vm_config.ssh_public_key, 
                  str(vm_config.disk_size_gb), 
-                 str(vm_config.name),
+                 vm_config.name,
                  str(vm_config.cpu_count),
                  str(vm_config.memory_size_mib)
                 ],
@@ -231,11 +249,54 @@ async def create_vm(vm_config: VMConfig, background_tasks: BackgroundTasks):
 async def start_vm(vm_start_config: VMStartConfig):
     try:
         socket_path = f"/tmp/firecracker-sockets/{vm_start_config.user_id}_{vm_start_config.name}.socket"
-        if not os.path.exists(f"/opt/firecracker/vm/{vm_start_config.user_id}/{vm_start_config.name}"):
-            raise HTTPException(status_code=404, detail="VM not found or not running")
+        vm_path = f"/opt/firecracker/vm/{vm_start_config.user_id}/{vm_start_config.name}"
+        
+        if not os.path.exists(vm_path):
+            raise HTTPException(status_code=404, detail="VM not found")
 
-        # Démarrer le processus Firecracker via le script
-        start_firecracker_process(vm_start_config.user_id, vm_start_config.name, socket_path)
+        # Vérifier si le socket existe déjà
+        if not os.path.exists(socket_path):
+            # Démarrer le processus Firecracker seulement si le socket n'existe pas
+            start_firecracker_process(vm_start_config.user_id, vm_start_config.name, socket_path)
+            
+            # Attendre que le socket soit disponible
+            timeout = 30
+            while timeout > 0 and not os.path.exists(socket_path):
+                time.sleep(1)
+                timeout -= 1
+            if timeout <= 0:
+                raise HTTPException(status_code=500, detail="Timeout waiting for Firecracker socket")
+
+            # Reconfigurer la VM
+            os_type = next((f.split('.')[0] for f in os.listdir(vm_path) if f.endswith('.ext4')), None)
+            if not os_type:
+                raise HTTPException(status_code=500, detail="Could not determine OS type")
+
+            # Récupérer la clé SSH depuis le fichier de configuration
+            ssh_key_path = os.path.join(vm_path, "ssh_key.pub")
+            if os.path.exists(ssh_key_path):
+                with open(ssh_key_path, 'r') as f:
+                    ssh_public_key = f.read().strip()
+            else:
+                ssh_public_key = ""
+
+            # Reconfigurer la VM
+            setting_result = subprocess.run(
+                ["./setting_vm_image.sh", 
+                 os_type,
+                 vm_start_config.user_id,
+                 ssh_public_key,
+                 "5",  # disk_size_gb par défaut
+                 vm_start_config.name,
+                 "2",  # cpu_count par défaut
+                 "1024"  # memory_size_mib par défaut
+                ],
+                capture_output=True,
+                text=True
+            )
+            if setting_result.returncode != 0:
+                logger.error(f"Failed to reconfigure VM: {setting_result.stderr}")
+                raise HTTPException(status_code=500, detail="Failed to reconfigure VM")
 
         # Démarrer la VM
         logger.info(f"Starting VM {vm_start_config.name}")
@@ -311,7 +372,7 @@ async def delete_vm(vm_delete_config: VMDeleteConfig):
         logger.error(f"Error deleting VM: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/vm/status", response_model=VMStatus)
+@app.post("/vm/status", response_model=VMStatus)
 async def get_vm_status(vm_status_config: VMStatusConfig):
     try:
         logger.info(f"Getting status for VM: {vm_status_config.name}")

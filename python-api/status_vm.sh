@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source "$(dirname "$0")/check_curl_response.sh"
+
 # Vérifier le nombre d'arguments
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <user_id> <vm_name>"
@@ -13,6 +15,7 @@ VM_NAME=$2
 # Définir les chemins
 VM_DIR="/opt/firecracker/vm/${USER_ID}/${VM_NAME}"
 SOCKET_PATH="/tmp/firecracker-sockets/${USER_ID}_${VM_NAME}.socket"
+LOG_PATH="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.log"
 
 # Vérifier si la VM existe
 if [ ! -d "${VM_DIR}" ]; then
@@ -23,14 +26,16 @@ fi
 # Vérifier si la VM est en cours d'exécution
 if [ -S "${SOCKET_PATH}" ]; then
     # Obtenir les métriques via l'API Firecracker
-    METRICS=$(curl --unix-socket "${SOCKET_PATH}" -s \
+    response=$(curl --unix-socket "${SOCKET_PATH}" -s \
       -X GET 'http://localhost/metrics' \
       -H 'Accept: application/json')
     
-    if [ $? -eq 0 ]; then
-        echo "{\"status\": \"running\", \"metrics\": ${METRICS}}"
+    if check_curl_response "$response" "Getting VM metrics" ${LINENO} "$LOG_PATH"; then
+        echo "{\"status\": \"running\", \"metrics\": ${response}}"
     else
+        get_last_error "$LOG_PATH"
         echo "{\"status\": \"error\", \"message\": \"Failed to get metrics\"}"
+        exit 1
     fi
 else
     echo "{\"status\": \"stopped\"}"

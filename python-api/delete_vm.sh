@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source "$(dirname "$0")/check_curl_response.sh"
+
 # Vérifier le nombre d'arguments
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <user_id> <vm_name>"
@@ -17,13 +19,18 @@ LOG_PATH="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.log"
 
 # Arrêter la VM si elle est en cours d'exécution
 if [ -S "${SOCKET_PATH}" ]; then
-    curl --unix-socket "${SOCKET_PATH}" -i \
+    response=$(curl --unix-socket "${SOCKET_PATH}" -i \
       -X PUT 'http://localhost/actions' \
       -H 'Accept: application/json' \
       -H 'Content-Type: application/json' \
       -d '{
         "action_type": "SendCtrlAltDel"
-      }'
+      }')
+
+    check_curl_response "$response" "Stopping VM before deletion" ${LINENO} "$LOG_PATH" || {
+        get_last_error "$LOG_PATH"
+        echo "Warning: Failed to stop VM gracefully, proceeding with deletion"
+    }
     sleep 2  # Attendre que la VM s'arrête
 fi
 

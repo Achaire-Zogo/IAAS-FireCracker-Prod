@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source "$(dirname "$0")/check_curl_response.sh"
+
 # Vérifier le nombre d'arguments
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <user_id> <vm_name>"
@@ -12,6 +14,7 @@ VM_NAME=$2
 
 # Définir les chemins
 SOCKET_PATH="/tmp/firecracker-sockets/${USER_ID}_${VM_NAME}.socket"
+LOG_PATH="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.log"
 
 # Vérifier que le socket existe
 if [ ! -S "${SOCKET_PATH}" ]; then
@@ -20,12 +23,17 @@ if [ ! -S "${SOCKET_PATH}" ]; then
 fi
 
 # Arrêter la VM via l'API Firecracker
-curl --unix-socket "${SOCKET_PATH}" -i \
+response=$(curl --unix-socket "${SOCKET_PATH}" -i \
   -X PUT 'http://localhost/actions' \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
     "action_type": "SendCtrlAltDel"
-  }'
+  }')
+
+check_curl_response "$response" "Stopping VM" ${LINENO} "$LOG_PATH" || {
+    get_last_error "$LOG_PATH"
+    exit 1
+}
 
 echo "VM stopped successfully"

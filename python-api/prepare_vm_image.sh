@@ -8,17 +8,18 @@
 #     sudo chmod +x /opt/firecracker/vmlinux-5.10
 # fi
 
-# Usage: ./prepare_vm_image.sh <os_type> <user_id> <ssh_public_key> <disk_size_gb> <vm_name>
-# Example: ./prepare_vm_image.sh ubuntu-24.04 user123 "ssh-rsa AAAA..." 5 "zaz"
+# Usage: ./prepare_vm_image.sh <os_type> <user_id> <ssh_public_key> <disk_size_gb> <vm_name> <root_password>
+# Example: ./prepare_vm_image.sh ubuntu-24.04 user123 "ssh-rsa AAAA..." 5 "zaz" "MySecurePass123"
 
 OS_TYPE=$1
 USER_ID=$2
 SSH_PUBLIC_KEY=$3
 DISK_SIZE_GB=$4
 VM_NAME=$5
+ROOT_PASSWORD=$6
 
-if [ -z "$OS_TYPE" ] || [ -z "$USER_ID" ] || [ -z "$SSH_PUBLIC_KEY" ] || [ -z "$DISK_SIZE_GB" ] || [ -z "$VM_NAME" ]; then
-    echo "Usage: $0 <os_type> <user_id> <ssh_public_key> <disk_size_gb> <vm_name>"
+if [ -z "$OS_TYPE" ] || [ -z "$USER_ID" ] || [ -z "$SSH_PUBLIC_KEY" ] || [ -z "$DISK_SIZE_GB" ] || [ -z "$VM_NAME" ] || [ -z "$ROOT_PASSWORD" ]; then
+    echo "Usage: $0 <os_type> <user_id> <ssh_public_key> <disk_size_gb> <vm_name> <root_password>"
     exit 1
 fi
 
@@ -56,6 +57,10 @@ if [ ! -f "${BASE_SQUASHFS}" ]; then
 fi
 
 sudo cp "${ROOTFS_DIR}/${OS_TYPE}.squashfs.upstream" "${VM_DIR}/"
+sudo cp "${BASE_DIR}/vmlinux-5.10.225" "${VM_DIR}/"
+sudo chmod -R 777 "${VM_DIR}/vmlinux-5.10.225"
+
+
 cd "${VM_DIR}"
 
 # Extract base image
@@ -64,6 +69,9 @@ unsquashfs "${OS_TYPE}.squashfs.upstream"
 # Configure SSH for the user
 mkdir -p squashfs-root/root/.ssh
 echo "${SSH_PUBLIC_KEY}" > squashfs-root/root/.ssh/authorized_keys
+
+# Set root password provided by user
+echo "root:${ROOT_PASSWORD}" | sudo chroot squashfs-root chpasswd
 
 # create ext4 filesystem image
 CUSTOM_VM_DIR="${VM_DIR}/${OS_TYPE}.ext4"

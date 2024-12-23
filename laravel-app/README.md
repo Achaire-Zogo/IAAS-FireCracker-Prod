@@ -1,66 +1,177 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# IAAS FireCracker - Cloud VM Management Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A modern and user-friendly Infrastructure as a Service (IAAS) platform built with Laravel, allowing users to create and manage virtual machines using FireCracker technology.
 
-## About Laravel
+![Dashboard Preview](docs/images/dashboard.png)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **User Authentication & Authorization**
+  - Secure registration and login
+  - Role-based access control
+  - Password reset functionality
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Virtual Machine Management**
+  - Create custom VMs with various configurations
+  - Choose from multiple VM offers (CPU, RAM, Storage)
+  - Select from different system images
+  - Start/Stop VM operations
+  - Real-time VM status monitoring
 
-## Learning Laravel
+- **Dashboard & Statistics**
+  - Overview of all VMs
+  - Resource usage statistics
+  - Cost tracking and billing information
+  - System health monitoring
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- **Security**
+  - Secure VM access via SSH
+  - Encrypted root passwords
+  - CSRF protection
+  - XSS prevention
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Prerequisites
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP >= 8.8
+- Composer
+- Node.js & NPM
+- MySQL >= 8.0
+- FireCracker installed and configured
+- Linux environment (Ubuntu 20.04 or later recommended)
 
-## Laravel Sponsors
+## Installation
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/IAAS-FireCracker.git
+cd IAAS-FireCracker/laravel-app
+```
 
-### Premium Partners
+2. **Install PHP dependencies**
+```bash
+composer install
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+3. **Install JavaScript dependencies**
+```bash
+npm install
+```
+
+4. **Environment Setup**
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+5. **Configure your `.env` file**
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_database
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+
+FIRECRACKER_PATH=/path/to/firecracker
+KERNEL_PATH=/path/to/kernel
+ROOTFS_PATH=/path/to/rootfs
+```
+
+6. **Database Setup**
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+7. **Build assets**
+```bash
+npm run build
+```
+
+## Running the Application
+
+1. **Start the Laravel development server**
+```bash
+php artisan serve --host 0.0.0.0
+```
+
+2. **Start the Vite development server (in development)**
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:8000`
+
+## Usage
+
+1. **Register a new account**
+   - Visit the registration page
+   - Fill in your details
+   - Verify your email address
+
+2. **Create a Virtual Machine**
+   - Go to the dashboard
+   - Click "New VM"
+   - Select VM offer and system image
+   - Configure VM settings
+   - Click "Create"
+
+3. **Manage Your VMs**
+   - View VM details
+   - Start/Stop VMs
+   - Monitor resource usage
+   - Access VM via SSH
+
+## Configuration
+
+### FireCracker Setup
+
+1. Install FireCracker:
+```bash
+wget https://github.com/firecracker-microvm/firecracker/releases/latest/download/firecracker-x86_64
+chmod +x firecracker-x86_64
+sudo mv firecracker-x86_64 /usr/local/bin/firecracker
+```
+
+2. Configure network:
+```bash
+sudo ip tuntap add tap0 mode tap
+sudo ip addr add 172.16.0.1/24 dev tap0
+sudo ip link set tap0 up
+```
+
+### System Images
+
+Place your system images in the configured directory and update the database:
+```bash
+php artisan images:sync
+```
+
+## Security
+
+- All VM operations require authentication
+- Root passwords are encrypted
+- Network isolation between VMs
+- Regular security updates
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Authors
+
+- Achaire ZOGO - *Initial work* - [YourGithub](https://github.com/Achaire-Zogo)
+
+## Acknowledgments
+
+- FireCracker team for the amazing VM technology
+- Laravel team for the excellent framework
+- Bootstrap team for the UI components

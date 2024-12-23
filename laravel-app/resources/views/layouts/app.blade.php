@@ -53,7 +53,7 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+    <nav class="bg-white navbar navbar-expand-lg navbar-light border-bottom">
         <div class="container">
             <!-- Brand -->
             <a class="navbar-brand" href="{{ route('home') }}">
@@ -77,8 +77,8 @@
                     </li>
                     @auth
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
-                           href="{{ route('dashboard') }}">
+                        <a class="nav-link {{ request()->routeIs('dashboard.index') ? 'active' : '' }}"
+                           href="{{ route('dashboard.index') }}">
                             <i class="bi bi-speedometer2 me-1"></i>{{ __('Dashboard') }}
                         </a>
                     </li>
@@ -145,7 +145,7 @@
     @endif
 
     <!-- Main Content -->
-    <main class="main-content py-4">
+    <main class="py-4 main-content">
         {{ $slot }}
     </main>
 
@@ -153,10 +153,10 @@
     <footer class="footer border-top text-muted">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-md-6 text-center text-md-start">
+                <div class="text-center col-md-6 text-md-start">
                     <span>&copy; {{ date('Y') }} {{ config('app.name') }}. {{ __('All rights reserved.') }}</span>
                 </div>
-                <div class="col-md-6 text-center text-md-end">
+                <div class="text-center col-md-6 text-md-end">
                     <div class="text-muted">
                         <small>{{ __('Powered by') }} <a href="https://github.com/firecracker-microvm/firecracker" class="text-decoration-none">Firecracker</a></small>
                     </div>

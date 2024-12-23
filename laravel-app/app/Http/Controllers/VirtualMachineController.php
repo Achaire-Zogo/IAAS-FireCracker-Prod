@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\VirtualMachine;
 use App\Models\SshKey;
+use App\Models\VmOffer;
+use App\Models\SystemImage;
 use App\Services\ContainerdService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,68 +53,92 @@ class VirtualMachineController extends Controller
         return view('virtual-machines.index', compact('virtualMachines'));
     }
 
+    public function create()
+    {
+        $offers = VmOffer::where('is_active', true)->get();
+        $systemImages = SystemImage::all();
+        
+        // Récupérer l'offre présélectionnée si elle existe
+        $selectedOfferId = request('offer');
+        $selectedOffer = $selectedOfferId ? VmOffer::find($selectedOfferId) : null;
+        
+        return view('virtual-machines.create', compact('offers', 'systemImages', 'selectedOffer'));
+    }
+
     public function store(Request $request)
     {
+        // Valider les données
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'os_type' => 'required',
+            'vm_offer_id' => 'required|exists:vm_offers,id',
+            'system_image_id' => 'required|exists:system_images,id',
+            'password' => 'required|string|min:8|max:255'
         ]);
 
-        try {
-            // Générer une nouvelle paire de clés SSH
-            $sshKeys = $this->generateSshKeyPair();
+        // Récupérer l'offre et l'image système
+        $offer = VmOffer::findOrFail($validated['vm_offer_id']);
+        $systemImage = SystemImage::findOrFail($validated['system_image_id']);
 
-            // Sauvegarder la clé SSH
-            $sshKey = new SshKey([
-                'name' => $sshKeys['key_name'],
-                'private_key' => $sshKeys['private_key'],
-                'public_key' => $sshKeys['public_key']
-            ]);
-            $sshKey->user_id = Auth::id();
-            $sshKey->save();
+        // Créer la VM avec les paramètres de base
+        $vm = new VirtualMachine();
+        $vm->name = $validated['name'];
+        $vm->user_id = Auth::id();
+        $vm->vm_offer_id = $offer->id;
+        $vm->system_image_id = $systemImage->id;
+        $vm->root_password_hash = password_hash($validated['password'], PASSWORD_DEFAULT);
 
-            // Créer la VM dans la base de données
-            $vm = new VirtualMachine([
-                'name' => $validated['name'],
-                'os_type' => $validated['os_type'],
-                'vcpu_count' => $validated['vcpu_count'],
-                'mem_size_mib' => $validated['mem_size_mib'],
-                'status' => 'creating',
-                'user_id' => Auth::id(),
-                'ssh_key_id' => $sshKey->id
-            ]);
+        // Copier les caractéristiques de l'offre
+        $vm->vcpu_count = $offer->cpu_count;
+        $vm->memory_size_mib = $offer->memory_size_mib;
+        $vm->disk_size_gb = $offer->disk_size_gb;
 
-            $vm->save();
+        // Configurer les chemins des fichiers
+        $baseDir = storage_path('app/vms/' . Str::slug($vm->name));
+        $vm->kernel_image_path = $systemImage->kernel_path;
+        $vm->rootfs_path = $baseDir . '/rootfs.ext4';
+        $vm->socket_path = $baseDir . '/firecracker.sock';
+        $vm->log_path = $baseDir . '/firecracker.log';
+        $vm->pid_file_path = $baseDir . '/firecracker.pid';
 
-            // Configurer la VM avec Containerd
-            $config = [
-                'kernel_path' => config('services.containerd.kernel_path'),
-                'rootfs' => $this->getRootfsPath($validated['os_type']),
-                'vcpu_count' => $validated['vcpu_count'],
-                'mem_size_mib' => $validated['mem_size_mib'],
-                'ssh_public_key' => $sshKeys['public_key']
-            ];
+        // Générer une adresse MAC et IP uniques
+        $vm->generateMacAddress();
+        $vm->generateIpAddress();
 
-            $result = $this->containerdService->createVM($validated['name'], $config);
+        // Configurer le réseau
+        $vm->tap_device_name = 'tap' . Str::random(8);
+        $vm->tap_ip = '172.16.0.1'; // IP fixe pour l'interface TAP
+        $vm->network_namespace = 'ns_' . Str::slug($vm->name);
+        
+        // Configurer SSH
+        $vm->ssh_port = $this->findAvailablePort(22000, 23000);
+        
+        // Paramètres par défaut
+        $vm->track_dirty_pages = true;
+        $vm->allow_mmds_requests = false;
+        $vm->balloon_deflate_on_oom = true;
+        $vm->status = 'creating';
 
-            // Mettre à jour le statut de la VM
-            $vm->update(['status' => 'running']);
+        // Sauvegarder la VM
+        $vm->save();
 
-            return redirect()->route('dashboard')
-                ->with('success', 'Machine virtuelle créée avec succès.');
+        // Rediriger vers la page de détails
+        return redirect()->route('dashboard.show', $vm->id)
+            ->with('success', 'Virtual machine is being created. Please wait while we set everything up.');
+    }
 
-        } catch (RuntimeException $e) {
-            // En cas d'erreur, supprimer la VM et la clé SSH de la base de données
-            if (isset($vm)) {
-                $vm->delete();
+    private function findAvailablePort($start, $end)
+    {
+        $usedPorts = VirtualMachine::whereNotNull('ssh_port')
+            ->pluck('ssh_port')
+            ->toArray();
+
+        for ($port = $start; $port <= $end; $port++) {
+            if (!in_array($port, $usedPorts)) {
+                return $port;
             }
-            if (isset($sshKey)) {
-                $sshKey->delete();
-            }
-
-            return redirect()->route('dashboard')
-                ->with('error', 'Échec de la création de la machine virtuelle : ' . $e->getMessage());
         }
+
+        throw new \RuntimeException('No available ports found');
     }
 
     public function start($id)

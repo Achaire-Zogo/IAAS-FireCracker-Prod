@@ -1,0 +1,68 @@
+2024-12-23 07:22:37,980 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-23 07:22:37,981 - __main__ - INFO - Starting Firecracker process
+2024-12-23 07:22:38,083 - __main__ - INFO - Socket is available, waiting for API
+2024-12-23 07:22:40,086 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-23 07:22:46,753 - __main__ - INFO - Setting up VM
+2024-12-23 07:22:48,589 - __main__ - INFO - VM zaz created successfully
+2024-12-23 07:29:22,630 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-23 07:29:22,631 - __main__ - INFO - Starting Firecracker process
+2024-12-23 07:29:22,733 - __main__ - INFO - Socket is available, waiting for API
+2024-12-23 07:29:24,735 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-23 07:29:31,287 - __main__ - INFO - Setting up VM
+2024-12-23 07:29:32,650 - __main__ - INFO - VM zaz created successfully
+2024-12-23 07:47:38,257 - __main__ - INFO - Starting Firecracker process
+2024-12-23 07:47:38,359 - __main__ - INFO - Socket is available, waiting for API
+2024-12-23 07:47:40,362 - __main__ - INFO - Starting VM zaz
+2024-12-23 07:47:40,646 - __main__ - ERROR - Failed to start VM:   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   188    0     0  100   188      0  87604 --:--:-- --:--:-- --:--:--  183k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    82    0     0  100    82      0  30677 --:--:-- --:--:-- --:--:-- 41000
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   152    0     0  100   152      0  62551 --:--:-- --:--:-- --:--:-- 76000
+RTNETLINK answers: Operation not permitted
+ioctl(TUNSETIFF): Device or resource busy
+RTNETLINK answers: Operation not permitted
+RTNETLINK answers: Operation not permitted
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   335  100   248  100    87  25015   8775 --:--:-- --:--:-- --:--:-- 37222
+
+2024-12-23 07:51:52,976 - __main__ - INFO - Starting Firecracker process
+2024-12-23 07:51:53,079 - __main__ - INFO - Socket is available, waiting for API
+2024-12-23 07:51:55,082 - __main__ - INFO - Starting VM zaz
+2024-12-23 07:51:55,389 - __main__ - ERROR - Failed to start VM:   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   188    0     0  100   188      0  74278 --:--:-- --:--:-- --:--:-- 94000
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    82    0     0  100    82      0  36936 --:--:-- --:--:-- --:--:-- 41000
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   152    0     0  100   152      0  59351 --:--:-- --:--:-- --:--:-- 76000
+RTNETLINK answers: Operation not permitted
+ioctl(TUNSETIFF): Device or resource busy
+RTNETLINK answers: Operation not permitted
+RTNETLINK answers: Operation not permitted
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   335  100   248  100    87   102k  36958 --:--:-- --:--:-- --:--:--  163k
+

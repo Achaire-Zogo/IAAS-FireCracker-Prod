@@ -3,8 +3,8 @@
 source "$(dirname "$0")/check_curl_response.sh"
 
 # Vérifier le nombre d'arguments
-if [ "$#" -ne 7 ]; then
-    echo "Usage: $0 <os_type> <user_id> <ssh_public_key> <disk_size_gb> <vm_name> <vcpu_count> <mem_size_mib>"
+if [ "$#" -ne 11 ]; then
+    echo "Usage: $0 <os_type> <user_id> <ssh_public_key> <disk_size_gb> <vm_name> <vcpu_count> <mem_size_mib> <tap_device> <tap_ip> <vm_ip> <vm_mac>"
     exit 1
 fi
 
@@ -16,6 +16,10 @@ DISK_SIZE_GB=$4
 VM_NAME=$5
 VCPU_COUNT=$6
 MEM_SIZE_MIB=$7
+TAP_DEVICE=$8
+TAP_IP=$9
+VM_IP=${10}
+VM_MAC=${11}
 
 # Définir les chemins
 BASE_DIR="/opt/firecracker"
@@ -41,21 +45,37 @@ if [ ! -f "${CUSTOM_VM}" ]; then
 fi
 
 # Configurer le réseau
-TAP_DEV="tap_${USER_ID}_${VM_NAME}"
-TAP_IP="172.16.0.1"
-VM_IP="172.16.0.2"
+TAP_DEV="${TAP_DEVICE}"
+TAP_IP="${TAP_IP}"
+VM_IP="${VM_IP}"
 MASK_SHORT="/30"
-FC_MAC="06:00:AC:10:00:02"
+FC_MAC="${VM_MAC}"
 
+# Journaliser la configuration réseau
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configuring network: TAP=${TAP_DEV}, TAP_IP=${TAP_IP}, VM_IP=${VM_IP}, MAC=${FC_MAC}" >> "$LOG_PATH"
 
+# Supprimer l'ancien TAP s'il existe
 sudo ip link del "$TAP_DEV" 2> /dev/null || true
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Cleaned up old TAP device: ${TAP_DEV}" >> "$LOG_PATH"
+
+# Créer un nouveau TAP
 sudo ip tuntap add dev "$TAP_DEV" mode tap
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Created new TAP device: ${TAP_DEV}" >> "$LOG_PATH"
+
+# Configurer le TAP
 sudo ip addr add "${TAP_IP}${MASK_SHORT}" dev "$TAP_DEV"
 sudo ip link set dev "$TAP_DEV" up
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured TAP device with IP: ${TAP_IP}" >> "$LOG_PATH"
 
-# Enable ip forwarding
+# Activer le forwarding
 sudo sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Enabled IP forwarding" >> "$LOG_PATH"
+
+# Configurer iptables pour le NAT
 sudo iptables -P FORWARD ACCEPT
+sudo iptables -t nat -D POSTROUTING -o "$HOST_IFACE" -j MASQUERADE || true
+sudo iptables -t nat -A POSTROUTING -o "$HOST_IFACE" -j MASQUERADE
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured iptables NAT rules" >> "$LOG_PATH"
 
 HOST_IFACE=$(ip -j route list default |jq -r '.[0].dev')
 
@@ -85,6 +105,8 @@ check_curl_response "$response" "Configuring VM machine config" ${LINENO} "$LOG_
     exit 1
 }
 
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured VM machine config" >> "$LOG_PATH"
+
 # Configuration du kernel
 response=$(curl --unix-socket "${SOCKET_PATH}" -i \
   -X PUT 'http://localhost/boot-source' \
@@ -99,6 +121,8 @@ check_curl_response "$response" "Configuring kernel" ${LINENO} "$LOG_PATH" || {
     get_last_error "$LOG_PATH"
     exit 1
 }
+
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured kernel" >> "$LOG_PATH"
 
 # Configuration du rootfs
 response=$(curl --unix-socket "${SOCKET_PATH}" -i \
@@ -117,6 +141,8 @@ check_curl_response "$response" "Configuring rootfs" ${LINENO} "$LOG_PATH" || {
     exit 1
 }
 
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured rootfs" >> "$LOG_PATH"
+
 # Configuration du réseau
 network_config="{
   \"iface_id\": \"eth0\",
@@ -134,6 +160,8 @@ check_curl_response "$response" "Configuring network interface" ${LINENO} "$LOG_
     exit 1
 }
 
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured network interface" >> "$LOG_PATH"
+
 # Configuration du disque
 response=$(curl --unix-socket "${SOCKET_PATH}" -i \
   -X PUT 'http://localhost/balloon' \
@@ -149,5 +177,6 @@ check_curl_response "$response" "Configuring balloon" ${LINENO} "$LOG_PATH" || {
     exit 1
 }
 
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured balloon" >> "$LOG_PATH"
 
 echo "VM configuration completed successfully"

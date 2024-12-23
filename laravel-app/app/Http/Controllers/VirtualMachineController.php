@@ -150,19 +150,20 @@ class VirtualMachineController extends Controller
                     'cpu_count' => $vm->vcpu_count,
                     'memory_size_mib' => $vm->memory_size_mib,
                     'disk_size_gb' => $vm->disk_size_gb,
-                    'os_type' => $systemImage->name, // Le type d'OS est le nom de l'image
-                    'ssh_public_key' => $vm->sshKey->public_key,
+                    'os_type' => $systemImage->os_type, // Le type d'OS est le nom de l'image
+                    'ssh_public_key' => $sshKeyPair['public_key'],
                     'root_password' => $validated['password'],
                     'tap_device' => $vm->tap_device_name,
                     'tap_ip' => $vm->tap_ip,
-                    'vm_ip' => $vm->ip_address
+                    'vm_ip' => $vm->ip_address,
+                    'vm_mac' => $vm->mac_address
                 ];
-
+                Log::info($vmData);
                 // Envoyer la requête à l'API Python
                 $client = new Client();
-                $response = $client->post(config('services.firecracker.api_url') . '/vm/create', [
+                $response = $client->post(env('API_FIRECRACKER_URL') . '/vm/create', [
                     'json' => $vmData,
-                    'timeout' => config('services.firecracker.timeout')
+                    'timeout' => 5000
                 ]);
 
                 $result = json_decode($response->getBody(), true);
@@ -170,7 +171,6 @@ class VirtualMachineController extends Controller
                 if ($result['success']) {
                     // La VM a été créée avec succès
                     $vm->status = 'created';
-                    $vm->last_error = null;
 
                     // Stocker les données supplémentaires si présentes
                     if (isset($result['data'])) {
@@ -189,23 +189,23 @@ class VirtualMachineController extends Controller
                     ]);
 
                     // Sauvegarder la VM
+                    $vm->status = 'stopped';
                     $vm->save();
                     return redirect()->route('virtual-machines.show', $vm->id)
                         ->with('success', 'Virtual machine is being created. Please wait while we set everything up.');
                 } else {
                     // Erreur lors de la création
                     $vm->status = 'failed';
-                    $vm->last_error = $result['message'] ?? 'Unknown error during VM creation';
+
                     Log::error('VM creation failed', [
                         'vm_id' => $vm->id,
-                        'error' => $vm->last_error,
                         'response' => $result
                     ]);
                 }
             } catch (\Exception $e) {
                 // Erreur de communication avec l'API
                 $vm->status = 'failed';
-                $vm->last_error = 'Failed to communicate with Firecracker API: ' . $e->getMessage();
+
                 Log::error('VM creation API error', [
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
@@ -274,15 +274,73 @@ class VirtualMachineController extends Controller
     {
         $vm = VirtualMachine::findOrFail($id);
 
-        try {
-            $this->containerdService->startVM($vm->name);
-            $vm->update(['status' => 'running']);
+        // Récupérer l'offre et l'image système
+        $offer = VmOffer::findOrFail($vm->vm_offer_id);
+        $systemImage = SystemImage::findOrFail($vm->system_image_id);
 
-            return redirect()->route('dashboard')
-                ->with('success', 'Machine virtuelle démarrée avec succès.');
-        } catch (RuntimeException $e) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Échec du démarrage de la machine virtuelle : ' . $e->getMessage());
+        try {
+            // Préparer les données pour l'API Python selon VMStartConfig
+            $vmData = [
+                'name' => $vm->name,
+                'user_id' => (string) Auth::user()->id, // L'API attend un string
+                'cpu_count' => $vm->vcpu_count,
+                'os_type' => $systemImage->os_type,
+                'memory_size_mib' => $vm->memory_size_mib,
+                'disk_size_gb' => $vm->disk_size_gb,
+                'tap_device' => $vm->tap_device_name,
+                'tap_ip' => $vm->tap_ip,
+                'vm_ip' => $vm->ip_address,
+                'vm_mac' => $vm->mac_address
+            ];
+
+            //dd($vmData);
+
+            // Envoyer la requête à l'API Python
+            $client = new Client();
+            $response = $client->post(env('API_FIRECRACKER_URL') . '/vm/start', [
+                'json' => $vmData,
+                'timeout' => 5000 // Timeout plus long pour le démarrage
+            ]);
+
+            $result = json_decode($response->getBody(), true);
+
+            if ($result['success']) {
+                $vm->status = 'running';
+                $vm->save();
+
+                Log::info('VM started successfully', [
+                    'vm_id' => $vm->id,
+                    'name' => $vm->name,
+                    'response' => $result
+                ]);
+
+                return redirect()->back()
+                    ->with('success', 'Virtual machine started successfully.');
+            } else {
+                $vm->status = 'error';
+                $vm->save();
+
+                Log::error('VM start failed', [
+                    'vm_id' => $vm->id,
+
+                    'response' => $result
+                ]);
+
+                return redirect()->back()
+                    ->with('error', 'Failed to start virtual machine.');
+            }
+        } catch (\Exception $e) {
+            $vm->status = 'error';
+            $vm->save();
+
+            Log::error('VM start API error', [
+                'vm_id' => $vm->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'An error occurred while starting the virtual machine.');
         }
     }
 

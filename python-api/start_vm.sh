@@ -3,8 +3,8 @@
 source "$(dirname "$0")/check_curl_response.sh"
 
 # Vérifier le nombre d'arguments
-if [ "$#" -ne 5 ]; then
-    echo "Usage: $0 <user_id> <vm_name> <os_type> <cpu_count> <memory_size_mib>"
+if [ "$#" -ne 10 ]; then
+    echo "Usage: $0 <user_id> <vm_name> <os_type> <cpu_count> <memory_size_mib> <disk_size_gb> <tap_device> <tap_ip> <vm_ip> <vm_mac>"
     exit 1
 fi
 
@@ -14,6 +14,11 @@ VM_NAME=$2
 OS_TYPE=$3
 VCPU_COUNT=$4
 MEM_SIZE_MIB=$5
+DISK_SIZE_GB=$6
+TAP_DEVICE=$7
+TAP_IP=$8
+VM_IP=$9
+VM_MAC=${10}
 
 # Définir les chemins
 VM_DIR="/opt/firecracker/vm/${USER_ID}/${VM_NAME}"
@@ -23,11 +28,11 @@ PID_FILE="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.pid"
 KERNEL_PATH="${VM_DIR}/vmlinux-5.10.225"
 CUSTOM_VM="${VM_DIR}/${OS_TYPE}.ext4"
 
-TAP_DEVICE="tap0"
-TAP_IP="172.16.0.1"
-VM_IP="172.16.0.2"
+TAP_DEVICE="${TAP_DEVICE}"
+TAP_IP="${TAP_IP}"
+VM_IP="${VM_IP}"
 MASK_SHORT="/30"
-FC_MAC="06:00:AC:10:00:02"
+FC_MAC="${VM_MAC}"
 
 # Vérifier que la VM existe
 if [ ! -d "${VM_DIR}" ]; then

@@ -35,13 +35,19 @@ class VMConfig(BaseModel):
     tap_device: Optional[str] = "tap0"
     tap_ip: Optional[str] = "172.16.0.1"
     vm_ip: Optional[str] = "172.16.0.2"
+    vm_mac: Optional[str] = "00:00:00:00:00:00"
 
 class VMStartConfig(BaseModel):
     name: str
     user_id: str  # Identifiant unique de l'utilisateur
     cpu_count: int
+    os_type: str
     memory_size_mib: int
     disk_size_gb: int
+    vm_mac: str
+    tap_device: Optional[str] = "tap0"
+    tap_ip: Optional[str] = "172.16.0.1"
+    vm_ip: Optional[str] = "172.16.0.2"
 
 class VMStopConfig(BaseModel):
     name: str
@@ -278,6 +284,28 @@ async def create_vm(vm_config: VMConfig, background_tasks: BackgroundTasks):
 
         #Setup VM
         logger.info("Setting up VM")
+        # Vérifier que tous les paramètres sont valides
+        if not vm_config.user_id:
+            raise HTTPException(status_code=400, detail="User ID is required")
+        if not vm_config.name:
+            raise HTTPException(status_code=400, detail="Name is required")
+        if not vm_config.os_type:
+            raise HTTPException(status_code=400, detail="OS type is required")
+        if not vm_config.disk_size_gb:
+            raise HTTPException(status_code=400, detail="Disk size is required")
+        if not vm_config.cpu_count:
+            raise HTTPException(status_code=400, detail="CPU count is required")
+        if not vm_config.memory_size_mib:
+            raise HTTPException(status_code=400, detail="Memory size is required")
+        if not vm_config.tap_device:
+            raise HTTPException(status_code=400, detail="Tap device is required")
+        if not vm_config.tap_ip:
+            raise HTTPException(status_code=400, detail="Tap IP is required")
+        if not vm_config.vm_ip:
+            raise HTTPException(status_code=400, detail="VM IP is required")
+        if not vm_config.vm_mac:
+            raise HTTPException(status_code=400, detail="VM MAC is required")
+
         setting_up_vm = subprocess.run(
                 ["./setting_vm_image.sh", 
                  vm_config.os_type, 
@@ -286,7 +314,11 @@ async def create_vm(vm_config: VMConfig, background_tasks: BackgroundTasks):
                  str(vm_config.disk_size_gb), 
                  vm_config.name,
                  str(vm_config.cpu_count),
-                 str(vm_config.memory_size_mib)
+                 str(vm_config.memory_size_mib),
+                 str(vm_config.tap_device),
+                 str(vm_config.tap_ip),
+                 str(vm_config.vm_ip),
+                 str(vm_config.vm_mac)
                 ],
                 capture_output=True,
                 text=True
@@ -347,9 +379,14 @@ async def start_vm(vm_start_config: VMStartConfig):
             ["./start_vm.sh",
              vm_start_config.user_id,
              str(vm_start_config.name),
-             os_type,
+             str(vm_start_config.os_type),
              str(vm_start_config.cpu_count),
-             str(vm_start_config.memory_size_mib)
+             str(vm_start_config.memory_size_mib),
+             str(vm_start_config.disk_size_gb),
+             str(vm_start_config.tap_device),
+             str(vm_start_config.tap_ip),
+             str(vm_start_config.vm_ip),
+             str(vm_start_config.vm_mac)
             ],
             capture_output=True,
             text=True

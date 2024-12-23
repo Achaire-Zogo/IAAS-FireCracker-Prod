@@ -48,4 +48,9 @@ return [
         'kernel_path' => env('CONTAINERD_KERNEL_PATH', '/opt/firecracker/vmlinux'),
         'rootfs_path' => env('CONTAINERD_ROOTFS_PATH', '/opt/firecracker/rootfs'),
     ],
+
+    'firecracker' => [
+        'api_url' => env('API_FIRECRACKER_URL', 'http://127.0.0.1:5000'),
+        'timeout' => env('API_FIRECRACKER_TIMEOUT', 5),
+    ],
 ];

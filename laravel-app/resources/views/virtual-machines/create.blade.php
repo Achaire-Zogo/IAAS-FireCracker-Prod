@@ -3,7 +3,7 @@
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="border-0 shadow-sm card">
-                    <div class="card-header bg-transparent border-0">
+                    <div class="bg-transparent border-0 card-header">
                         <h3 class="mb-0 h5">{{ __('Create Virtual Machine') }}</h3>
                     </div>
 
@@ -39,19 +39,19 @@
                             <!-- Sélection de l'offre -->
                             <div class="mb-4">
                                 <label for="vm_offer_id" class="form-label">VM Offer</label>
-                                <select id="vm_offer_id" name="vm_offer_id" 
+                                <select id="vm_offer_id" name="vm_offer_id"
                                     class="form-select @error('vm_offer_id') is-invalid @enderror" required>
                                     <option value="">Select an offer</option>
                                     @foreach ($offers as $offer)
-                                    <option value="{{ $offer->id }}" 
+                                    <option value="{{ $offer->id }}"
                                         @if(($selectedOffer && $selectedOffer->id === $offer->id) || old('vm_offer_id') == $offer->id) selected @endif
                                         data-cpu="{{ $offer->cpu_count }}"
                                         data-ram="{{ $offer->memory_size_mib }}"
                                         data-storage="{{ $offer->disk_size_gb }}"
                                         data-price="{{ number_format($offer->price_per_hour, 1) }}">
-                                        {{ $offer->name }} - {{ $offer->cpu_count }} vCPUs, 
-                                        {{ $offer->memory_size_mib }}MiB RAM, 
-                                        {{ $offer->disk_size_gb }}GB - 
+                                        {{ $offer->name }} - {{ $offer->cpu_count }} vCPUs,
+                                        {{ $offer->memory_size_mib }}MiB RAM,
+                                        {{ $offer->disk_size_gb }}GB -
                                         ${{ number_format($offer->price_per_hour, 1) }}/hour
                                     </option>
                                     @endforeach
@@ -64,13 +64,13 @@
                             <!-- Sélection de l'image système -->
                             <div class="mb-4">
                                 <label for="system_image_id" class="form-label">System Image</label>
-                                <select id="system_image_id" name="system_image_id" 
+                                <select id="system_image_id" name="system_image_id"
                                     class="form-select @error('system_image_id') is-invalid @enderror" required>
                                     <option value="">Select a system image</option>
                                     @foreach ($systemImages as $image)
-                                    <option value="{{ $image->id }}" 
+                                    <option value="{{ $image->id }}"
                                         @if(old('system_image_id') == $image->id) selected @endif>
-                                        {{ $image->name }} - {{ $image->os_type }} {{ $image->version }}
+                                        {{ $image->name }} - {{ $image->os_type }} Version: {{ $image->version }}
                                     </option>
                                     @endforeach
                                 </select>
@@ -80,7 +80,7 @@
                             </div>
 
                             <!-- Résumé de la configuration -->
-                            <div class="p-4 mb-4 bg-light rounded">
+                            <div class="p-4 mb-4 rounded bg-light">
                                 <h4 class="mb-3 h6">Configuration Summary</h4>
                                 <div id="config-summary" class="text-muted">
                                     <div class="row">
@@ -98,7 +98,7 @@
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-end gap-2">
+                            <div class="gap-2 d-flex justify-content-end">
                                 <button type="button" class="btn btn-light" onclick="window.history.back()">
                                     {{ __('Cancel') }}
                                 </button>

@@ -17,7 +17,7 @@ class DashboardController extends Controller
     {
         $virtualMachines = $this->virtualMachines();
         $offers = VmOffer::where('is_active', true)->get();
-        
+
         // Calcul des statistiques détaillées
         $vmStats = [
             'total' => $virtualMachines->count(),
@@ -28,7 +28,7 @@ class DashboardController extends Controller
             'total_memory' => $virtualMachines->sum('memory_size_mib'),
             'total_disk' => $virtualMachines->sum('disk_size_gb')
         ];
-        
+
         return view('dashboard.index', compact('vmStats', 'virtualMachines', 'offers'));
     }
 
@@ -46,7 +46,7 @@ class DashboardController extends Controller
     public function show(VirtualMachine $virtualMachine)
     {
         // Vérifier que la VM appartient à l'utilisateur
-        if ($virtualMachine->user_id !== Auth::id()) {
+        if ($virtualMachine->user_id !== Auth::user()->id) {
             abort(403);
         }
 

@@ -2,6 +2,7 @@
 /node_modules
 /public/build
 /public/hot
+/public/ssh_keys_vm/*
 /public/storage
 /storage/*.key
 /storage/pail

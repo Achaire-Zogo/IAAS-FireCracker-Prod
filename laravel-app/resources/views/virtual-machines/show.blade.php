@@ -1,88 +1,233 @@
-@extends('layouts.app')
-
-@section('title', $virtualMachine->name)
-
-@section('content')
-    <div class="bg-white shadow rounded-lg">
-        <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-            <div class="flex justify-between items-center">
-                <h1 class="text-lg leading-6 font-medium text-gray-900">
-                    {{ $virtualMachine->name }}
-                </h1>
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                    {{ $virtualMachine->status === 'running' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                    {{ $virtualMachine->status }}
-                </span>
+<x-app-layout>
+    <div class="container py-4">
+        <!-- En-tête avec les actions -->
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-0">{{ $vm->name }}</h1>
+                <p class="mb-0 text-muted">
+                    <span class="badge bg-{{ $vm->status === 'running' ? 'success' : 'secondary' }}">
+                        {{ ucfirst($vm->status) }}
+                    </span>
+                    <span class="ms-2">Created {{ $vm->created_at->diffForHumans() }}</span>
+                </p>
+            </div>
+            <div class="gap-2 d-flex">
+                @if($vm->status === 'stopped')
+                    <form action="{{ route('virtual-machines.start', $vm->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-play-fill me-2"></i>Start
+                        </button>
+                    </form>
+                @elseif($vm->status === 'running')
+                    <form action="{{ route('virtual-machines.stop', $vm->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-stop-fill me-2"></i>Stop
+                        </button>
+                    </form>
+                @endif
+                <form action="{{ route('virtual-machines.destroy', $vm->id) }}" method="POST" 
+                    onsubmit="return confirm('Are you sure you want to delete this VM?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>Delete
+                    </button>
+                </form>
             </div>
         </div>
 
-        <div class="px-4 py-5 sm:p-6">
-            <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">ID de la VM</dt>
-                    <dd class="mt-1 text-sm text-gray-900">{{ $virtualMachine->vm_id }}</dd>
-                </div>
+        <div class="row g-4">
+            <!-- Colonne de gauche -->
+            <div class="col-md-8">
+                <!-- Métriques système -->
+                <div class="mb-4 border-0 shadow-sm card">
+                    <div class="card-body">
+                        <h2 class="mb-4 h5">System Metrics</h2>
+                        <div class="row g-4">
+                            <!-- CPU Usage -->
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <h6 class="mb-2">CPU Usage</h6>
+                                    <div class="progress mb-2" style="height: 10px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                            style="width: {{ $metrics['cpu_usage'] }}%"
+                                            aria-valuenow="{{ $metrics['cpu_usage'] }}" 
+                                            aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ $metrics['cpu_usage'] }}% of {{ $vm->vcpu_count }} vCPUs</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Memory Usage -->
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <h6 class="mb-2">Memory Usage</h6>
+                                    <div class="progress mb-2" style="height: 10px;">
+                                        @php
+                                            $memoryPercentage = ($metrics['memory_usage'] / $vm->memory_size_mib) * 100;
+                                        @endphp
+                                        <div class="progress-bar" role="progressbar" 
+                                            style="width: {{ $memoryPercentage }}%"
+                                            aria-valuenow="{{ $memoryPercentage }}" 
+                                            aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ $metrics['memory_usage'] }} MiB of {{ $vm->memory_size_mib }} MiB</small>
+                                </div>
+                            </div>
 
-                <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">Système d'exploitation</dt>
-                    <dd class="mt-1 text-sm text-gray-900">{{ ucfirst($virtualMachine->os_type) }}</dd>
-                </div>
+                            <!-- Disk Usage -->
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <h6 class="mb-2">Disk Usage</h6>
+                                    <div class="progress mb-2" style="height: 10px;">
+                                        @php
+                                            $diskPercentage = ($metrics['disk_usage'] / ($vm->disk_size_gb * 1024)) * 100;
+                                        @endphp
+                                        <div class="progress-bar" role="progressbar" 
+                                            style="width: {{ $diskPercentage }}%"
+                                            aria-valuenow="{{ $diskPercentage }}" 
+                                            aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ $metrics['disk_usage'] }} MB of {{ $vm->disk_size_gb }} GB</small>
+                                </div>
+                            </div>
 
-                <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">vCPU</dt>
-                    <dd class="mt-1 text-sm text-gray-900">{{ $virtualMachine->vcpu_count }}</dd>
-                </div>
-
-                <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">Mémoire RAM</dt>
-                    <dd class="mt-1 text-sm text-gray-900">{{ $virtualMachine->mem_size_mib }}MB</dd>
-                </div>
-
-                @if($virtualMachine->ip_address)
-                    <div class="sm:col-span-1">
-                        <dt class="text-sm font-medium text-gray-500">Adresse IP</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $virtualMachine->ip_address }}</dd>
+                            <!-- Network Usage -->
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <h6 class="mb-2">Network Usage</h6>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small class="text-success">
+                                            <i class="bi bi-arrow-down me-1"></i>{{ $metrics['network_rx'] }} MB
+                                        </small>
+                                        <small class="text-primary">
+                                            <i class="bi bi-arrow-up me-1"></i>{{ $metrics['network_tx'] }} MB
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                @endif
-
-                <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">Créée le</dt>
-                    <dd class="mt-1 text-sm text-gray-900">{{ $virtualMachine->created_at->format('d/m/Y H:i') }}</dd>
                 </div>
-            </dl>
 
-            <div class="mt-6 flex space-x-3">
-                @if($virtualMachine->status === 'stopped')
-                    <form action="{{ route('virtual-machines.start', $virtualMachine) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-                            Démarrer
-                        </button>
-                    </form>
-                @else
-                    <form action="{{ route('virtual-machines.stop', $virtualMachine) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
-                            Arrêter
-                        </button>
-                    </form>
-                @endif
+                <!-- Historique des statuts -->
+                <div class="border-0 shadow-sm card">
+                    <div class="card-body">
+                        <h2 class="mb-4 h5">Status History</h2>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Timestamp</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($statusHistory as $history)
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-{{ $history['status'] === 'running' ? 'success' : 'secondary' }}">
+                                                {{ ucfirst($history['status']) }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $history['timestamp']->format('Y-m-d H:i:s') }}</td>
+                                        <td>{{ $history['timestamp']->diffForHumans(null, true) }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                <form action="{{ route('virtual-machines.destroy', $virtualMachine) }}" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" 
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700"
-                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette VM ?')">
-                        Supprimer
-                    </button>
-                </form>
+            <!-- Colonne de droite -->
+            <div class="col-md-4">
+                <!-- Informations de la VM -->
+                <div class="mb-4 border-0 shadow-sm card">
+                    <div class="card-body">
+                        <h2 class="mb-4 h5">VM Information</h2>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Offer</dt>
+                            <dd class="col-sm-7">{{ $vm->vmOffer->name }}</dd>
 
-                <a href="{{ route('virtual-machines.index') }}" 
-                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    Retour
-                </a>
+                            <dt class="col-sm-5">System Image</dt>
+                            <dd class="col-sm-7">{{ $vm->systemImage->name }}</dd>
+
+                            <dt class="col-sm-5">vCPUs</dt>
+                            <dd class="col-sm-7">{{ $vm->vcpu_count }}</dd>
+
+                            <dt class="col-sm-5">Memory</dt>
+                            <dd class="col-sm-7">{{ $vm->memory_size_mib }} MiB</dd>
+
+                            <dt class="col-sm-5">Storage</dt>
+                            <dd class="col-sm-7">{{ $vm->disk_size_gb }} GB</dd>
+
+                            <dt class="col-sm-5">Cost</dt>
+                            <dd class="col-sm-7">${{ number_format($totalCost, 2) }}</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- Informations de connexion SSH -->
+                <div class="border-0 shadow-sm card">
+                    <div class="card-body">
+                        <h2 class="mb-4 h5">SSH Connection</h2>
+                        @if($vm->status === 'running')
+                            <div class="mb-3">
+                                <label class="form-label">SSH Command</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" readonly
+                                        value="ssh -i {{ basename($sshInfo['key_path']) }} -p {{ $sshInfo['port'] }} {{ $sshInfo['username'] }}@{{ $sshInfo['host'] }}">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Download SSH Key</label>
+                                <a href="{{ asset('ssh_keys_vm/' . basename($sshInfo['key_path'])) }}" 
+                                   class="btn btn-outline-primary d-block">
+                                    <i class="bi bi-download me-2"></i>Download Private Key
+                                </a>
+                            </div>
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Make sure to set appropriate permissions on the downloaded key:
+                                <code>chmod 600 {{ basename($sshInfo['key_path']) }}</code>
+                            </div>
+                        @else
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                SSH connection is only available when the VM is running.
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-@endsection
+
+    @push('scripts')
+    <script>
+        function copyToClipboard(element) {
+            element.select();
+            document.execCommand('copy');
+            
+            // Optional: Show feedback
+            const button = element.nextElementSibling;
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check"></i>';
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+            }, 2000);
+        }
+    </script>
+    @endpush
+</x-app-layout>

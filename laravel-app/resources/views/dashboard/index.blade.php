@@ -114,7 +114,6 @@
                             <tr>
                                 <td>
                                     <div class="fw-medium">{{ $vm->name }}</div>
-                                    <div class="small text-muted">ID: {{ $vm->id }}</div>
                                 </td>
                                 <td>
                                     @if($vm->status === 'running')
@@ -143,7 +142,7 @@
                                 <td>${{ number_format($vm->total_cost, 2) }}</td>
                                 <td class="text-end">
                                     <div class="btn-group">
-                                        <a href="{{ route('dashboard.show', $vm->id) }}"
+                                        <a href="{{ route('virtual-machines.show', $vm->id) }}"
                                            class="btn btn-sm btn-outline-primary">Details</a>
                                         @if($vm->status === 'stopped')
                                         <form action="{{ route('virtual-machines.start', $vm->id) }}" method="POST" class="d-inline">

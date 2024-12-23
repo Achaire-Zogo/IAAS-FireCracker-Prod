@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\VirtualMachine;
+use RuntimeException;
 use App\Models\SshKey;
+use GuzzleHttp\Client;
 use App\Models\VmOffer;
 use App\Models\SystemImage;
-use App\Services\ContainerdService;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Models\VirtualMachine;
+use App\Services\ContainerdService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Str;
-use RuntimeException;
 
 class VirtualMachineController extends Controller
 {
@@ -24,8 +26,8 @@ class VirtualMachineController extends Controller
 
     private function generateSshKeyPair()
     {
-        $keyName = 'vm_' . Str::random(10);
-        $privateKeyPath = storage_path("app/ssh_keys/{$keyName}");
+        $keyName = 'vm_' . Str::random(10).'_'.time();
+        $privateKeyPath = public_path("ssh_keys_vm/{$keyName}");
         $publicKeyPath = "{$privateKeyPath}.pub";
 
         // Créer le répertoire s'il n'existe pas
@@ -47,6 +49,26 @@ class VirtualMachineController extends Controller
         ];
     }
 
+    private function generateMacAddress()
+    {
+        // Le format de base pour l'adresse MAC : 06:00:AC:10:00:XX
+        // Où XX est un nombre hexadécimal entre 02 et FF (2-255 en décimal)
+        // Cela donnera des adresses IP 172.16.0.2 à 172.16.0.255
+
+        $lastByte = sprintf('%02X', rand(2, 255)); // Génère un nombre entre 02 et FF en hex
+        return "06:00:AC:10:00:{$lastByte}";
+    }
+
+    private function generateIpFromMac($macAddress)
+    {
+        // Extraire le dernier octet de l'adresse MAC (en hex)
+        $lastByte = substr($macAddress, -2);
+        // Convertir en décimal
+        $lastOctet = hexdec($lastByte);
+        // Construire l'adresse IP
+        return "172.16.0.{$lastOctet}";
+    }
+
     public function index()
     {
         $virtualMachines = Auth::user()->virtualMachines;
@@ -57,22 +79,21 @@ class VirtualMachineController extends Controller
     {
         $offers = VmOffer::where('is_active', true)->get();
         $systemImages = SystemImage::all();
-        
+
         // Récupérer l'offre présélectionnée si elle existe
         $selectedOfferId = request('offer');
         $selectedOffer = $selectedOfferId ? VmOffer::find($selectedOfferId) : null;
-        
+
         return view('virtual-machines.create', compact('offers', 'systemImages', 'selectedOffer'));
     }
 
     public function store(Request $request)
     {
-        // Valider les données
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'vm_offer_id' => 'required|exists:vm_offers,id',
-            'system_image_id' => 'required|exists:system_images,id',
-            'password' => 'required|string|min:8|max:255'
+            'name' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string', 'min:8'],
+            'vm_offer_id' => ['required', 'exists:vm_offers,id'],
+            'system_image_id' => ['required', 'exists:system_images,id']
         ]);
 
         // Récupérer l'offre et l'image système
@@ -82,63 +103,160 @@ class VirtualMachineController extends Controller
         // Créer la VM avec les paramètres de base
         $vm = new VirtualMachine();
         $vm->name = $validated['name'];
-        $vm->user_id = Auth::id();
+        $vm->user_id = Auth::user()->id;
         $vm->vm_offer_id = $offer->id;
         $vm->system_image_id = $systemImage->id;
-        $vm->root_password_hash = password_hash($validated['password'], PASSWORD_DEFAULT);
+        $vm->root_password_hash = $validated['password'];
 
         // Copier les caractéristiques de l'offre
         $vm->vcpu_count = $offer->cpu_count;
         $vm->memory_size_mib = $offer->memory_size_mib;
         $vm->disk_size_gb = $offer->disk_size_gb;
 
-        // Configurer les chemins des fichiers
-        $baseDir = storage_path('app/vms/' . Str::slug($vm->name));
-        $vm->kernel_image_path = $systemImage->kernel_path;
-        $vm->rootfs_path = $baseDir . '/rootfs.ext4';
-        $vm->socket_path = $baseDir . '/firecracker.sock';
-        $vm->log_path = $baseDir . '/firecracker.log';
-        $vm->pid_file_path = $baseDir . '/firecracker.pid';
-
-        // Générer une adresse MAC et IP uniques
-        $vm->generateMacAddress();
-        $vm->generateIpAddress();
-
         // Configurer le réseau
-        $vm->tap_device_name = 'tap' . Str::random(8);
+        $vm->mac_address = $this->generateMacAddress();
+        $vm->ip_address = $this->generateIpFromMac($vm->mac_address);
+        $vm->tap_device_name = 'tap0';
         $vm->tap_ip = '172.16.0.1'; // IP fixe pour l'interface TAP
         $vm->network_namespace = 'ns_' . Str::slug($vm->name);
-        
+
         // Configurer SSH
-        $vm->ssh_port = $this->findAvailablePort(22000, 23000);
-        
+        $vm->ssh_port = 22;
+
         // Paramètres par défaut
         $vm->track_dirty_pages = true;
         $vm->allow_mmds_requests = false;
-        $vm->balloon_deflate_on_oom = true;
         $vm->status = 'creating';
 
-        // Sauvegarder la VM
-        $vm->save();
 
-        // Rediriger vers la page de détails
-        return redirect()->route('dashboard.show', $vm->id)
+
+        try {
+            // Préparer les données pour l'API Python selon VMConfig
+            $vmData = [
+                'name' => $vm->name,
+                'user_id' => (string) Auth::id(), // L'API attend un string
+                'cpu_count' => $vm->vcpu_count,
+                'memory_size_mib' => $vm->memory_size_mib,
+                'disk_size_gb' => $vm->disk_size_gb,
+                'os_type' => $systemImage->name, // Le type d'OS est le nom de l'image
+                'ssh_public_key' => $vm->sshKey->public_key,
+                'root_password' => $validated['password'],
+                'tap_device' => $vm->tap_device_name,
+                'tap_ip' => $vm->tap_ip,
+                'vm_ip' => $vm->ip_address
+            ];
+
+            // Envoyer la requête à l'API Python
+            $client = new Client();
+            $response = $client->post(config('services.firecracker.api_url') . '/vm', [
+                'json' => $vmData,
+                'timeout' => config('services.firecracker.timeout')
+            ]);
+
+            $result = json_decode($response->getBody(), true);
+
+            if ($result['success']) {
+                // La VM a été créée avec succès
+                $vm->status = 'created';
+                $vm->last_error = null;
+
+                // Stocker les données supplémentaires si présentes
+                if (isset($result['data'])) {
+                    if (isset($result['data']['socket_path'])) {
+                        $vm->socket_path = $result['data']['socket_path'];
+                    }
+                    if (isset($result['data']['vm_path'])) {
+                        $vm->vm_path = $result['data']['vm_path'];
+                    }
+                }
+
+                Log::info('VM created successfully', [
+                    'vm_id' => $vm->id,
+                    'name' => $vm->name,
+                    'response' => $result
+                ]);
+
+                // Créer une clé SSH si elle n'existe pas
+                if (!$vm->sshKey) {
+                    $sshKeyPair = $this->generateSshKeyPair();
+                    $vm->sshKey()->create([
+                        'user_id'=> Auth::user()->id,
+                        'name' => $sshKeyPair['key_name'],
+                        'public_key' => $sshKeyPair['public_key'],
+                        'private_key' => $sshKeyPair['private_key']
+                    ]);
+                }
+                // Sauvegarder la VM
+                $vm->save();
+            } else {
+                // Erreur lors de la création
+                $vm->status = 'failed';
+                $vm->last_error = $result['message'] ?? 'Unknown error during VM creation';
+                Log::error('VM creation failed', [
+                    'vm_id' => $vm->id,
+                    'error' => $vm->last_error,
+                    'response' => $result
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Erreur de communication avec l'API
+            $vm->status = 'failed';
+            $vm->last_error = 'Failed to communicate with Firecracker API: ' . $e->getMessage();
+            Log::error('VM creation API error', [
+                'vm_id' => $vm->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+
+
+
+        return redirect()->route('virtual-machines.show', $vm)
             ->with('success', 'Virtual machine is being created. Please wait while we set everything up.');
     }
 
-    private function findAvailablePort($start, $end)
+    public function show($id)
     {
-        $usedPorts = VirtualMachine::whereNotNull('ssh_port')
-            ->pluck('ssh_port')
-            ->toArray();
+        // Récupérer la VM avec ses relations
+        $vm = VirtualMachine::with(['vmOffer', 'systemImage', 'sshKey'])
+            ->where('user_id', Auth::id())
+            ->findOrFail($id);
 
-        for ($port = $start; $port <= $end; $port++) {
-            if (!in_array($port, $usedPorts)) {
-                return $port;
-            }
-        }
+        // Calculer le coût total depuis la création
+        $hoursRunning = $vm->created_at->diffInHours(now());
+        $totalCost = $hoursRunning * $vm->vmOffer->price_per_hour;
 
-        throw new \RuntimeException('No available ports found');
+        // Récupérer les métriques système si disponibles
+        $metrics = [
+            'cpu_usage' => rand(0, 100), // À remplacer par les vraies métriques
+            'memory_usage' => rand(0, $vm->memory_size_mib),
+            'disk_usage' => rand(0, $vm->disk_size_gb * 1024), // Convertir en MB
+            'network_rx' => rand(0, 1000), // MB reçus
+            'network_tx' => rand(0, 1000)  // MB transmis
+        ];
+
+        // Récupérer l'historique des statuts (à implémenter avec un modèle VmStatusHistory)
+        $statusHistory = [
+            ['status' => 'creating', 'timestamp' => $vm->created_at],
+            ['status' => 'running', 'timestamp' => $vm->created_at->addMinutes(2)],
+            // Ajouter d'autres statuts selon l'historique
+        ];
+
+        // Préparer les informations de connexion SSH
+        $sshInfo = [
+            'host' => $vm->ip_address,
+            'port' => $vm->ssh_port,
+            'username' => 'root',
+            'key_path' => $vm->sshKey ? public_path("ssh_keys_vm/{$vm->sshKey->name}") : null
+        ];
+
+        return view('virtual-machines.show', compact(
+            'vm',
+            'totalCost',
+            'metrics',
+            'statusHistory',
+            'sshInfo'
+        ));
     }
 
     public function start($id)

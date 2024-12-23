@@ -89,130 +89,141 @@ class VirtualMachineController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:8'],
-            'vm_offer_id' => ['required', 'exists:vm_offers,id'],
-            'system_image_id' => ['required', 'exists:system_images,id']
-        ]);
-
-        // Récupérer l'offre et l'image système
-        $offer = VmOffer::findOrFail($validated['vm_offer_id']);
-        $systemImage = SystemImage::findOrFail($validated['system_image_id']);
-
-        // Créer la VM avec les paramètres de base
-        $vm = new VirtualMachine();
-        $vm->name = $validated['name'];
-        $vm->user_id = Auth::user()->id;
-        $vm->vm_offer_id = $offer->id;
-        $vm->system_image_id = $systemImage->id;
-        $vm->root_password_hash = $validated['password'];
-
-        // Copier les caractéristiques de l'offre
-        $vm->vcpu_count = $offer->cpu_count;
-        $vm->memory_size_mib = $offer->memory_size_mib;
-        $vm->disk_size_gb = $offer->disk_size_gb;
-
-        // Configurer le réseau
-        $vm->mac_address = $this->generateMacAddress();
-        $vm->ip_address = $this->generateIpFromMac($vm->mac_address);
-        $vm->tap_device_name = 'tap0';
-        $vm->tap_ip = '172.16.0.1'; // IP fixe pour l'interface TAP
-        $vm->network_namespace = 'ns_' . Str::slug($vm->name);
-
-        // Configurer SSH
-        $vm->ssh_port = 22;
-
-        // Paramètres par défaut
-        $vm->track_dirty_pages = true;
-        $vm->allow_mmds_requests = false;
-        $vm->status = 'creating';
-
-
-
-        try {
-            // Préparer les données pour l'API Python selon VMConfig
-            $vmData = [
-                'name' => $vm->name,
-                'user_id' => (string) Auth::id(), // L'API attend un string
-                'cpu_count' => $vm->vcpu_count,
-                'memory_size_mib' => $vm->memory_size_mib,
-                'disk_size_gb' => $vm->disk_size_gb,
-                'os_type' => $systemImage->name, // Le type d'OS est le nom de l'image
-                'ssh_public_key' => $vm->sshKey->public_key,
-                'root_password' => $validated['password'],
-                'tap_device' => $vm->tap_device_name,
-                'tap_ip' => $vm->tap_ip,
-                'vm_ip' => $vm->ip_address
-            ];
-
-            // Envoyer la requête à l'API Python
-            $client = new Client();
-            $response = $client->post(config('services.firecracker.api_url') . '/vm', [
-                'json' => $vmData,
-                'timeout' => config('services.firecracker.timeout')
+        try{
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'password' => ['required', 'string', 'min:8'],
+                'vm_offer_id' => ['required', 'exists:vm_offers,id'],
+                'system_image_id' => ['required', 'exists:system_images,id']
             ]);
 
-            $result = json_decode($response->getBody(), true);
+            // Récupérer l'offre et l'image système
+            $offer = VmOffer::findOrFail($validated['vm_offer_id']);
+            $systemImage = SystemImage::findOrFail($validated['system_image_id']);
 
-            if ($result['success']) {
-                // La VM a été créée avec succès
-                $vm->status = 'created';
-                $vm->last_error = null;
+            // Créer la VM avec les paramètres de base
+            $vm = new VirtualMachine();
+            $vm->name = $validated['name'];
+            $vm->user_id = Auth::user()->id;
+            $vm->vm_offer_id = $offer->id;
+            $vm->system_image_id = $systemImage->id;
+            $vm->root_password_hash = $validated['password'];
 
-                // Stocker les données supplémentaires si présentes
-                if (isset($result['data'])) {
-                    if (isset($result['data']['socket_path'])) {
-                        $vm->socket_path = $result['data']['socket_path'];
-                    }
-                    if (isset($result['data']['vm_path'])) {
-                        $vm->vm_path = $result['data']['vm_path'];
-                    }
-                }
+            // Copier les caractéristiques de l'offre
+            $vm->vcpu_count = $offer->cpu_count;
+            $vm->memory_size_mib = $offer->memory_size_mib;
+            $vm->disk_size_gb = $offer->disk_size_gb;
 
-                Log::info('VM created successfully', [
-                    'vm_id' => $vm->id,
-                    'name' => $vm->name,
-                    'response' => $result
-                ]);
+            // Configurer le réseau
+            $vm->mac_address = $this->generateMacAddress();
+            $vm->ip_address = $this->generateIpFromMac($vm->mac_address);
+            $vm->tap_device_name = 'tap0';
+            $vm->tap_ip = '172.16.0.1'; // IP fixe pour l'interface TAP
+            $vm->network_namespace = 'ns_' . Str::slug($vm->name);
 
-                // Créer une clé SSH si elle n'existe pas
-                if (!$vm->sshKey) {
-                    $sshKeyPair = $this->generateSshKeyPair();
-                    $vm->sshKey()->create([
-                        'user_id'=> Auth::user()->id,
-                        'name' => $sshKeyPair['key_name'],
-                        'public_key' => $sshKeyPair['public_key'],
-                        'private_key' => $sshKeyPair['private_key']
-                    ]);
-                }
-                // Sauvegarder la VM
-                $vm->save();
-            } else {
-                // Erreur lors de la création
-                $vm->status = 'failed';
-                $vm->last_error = $result['message'] ?? 'Unknown error during VM creation';
-                Log::error('VM creation failed', [
-                    'vm_id' => $vm->id,
-                    'error' => $vm->last_error,
-                    'response' => $result
+            // Configurer SSH
+            $vm->ssh_port = 22;
+
+            // Paramètres par défaut
+            $vm->track_dirty_pages = true;
+            $vm->allow_mmds_requests = false;
+            $vm->status = 'creating';
+
+            // Créer une clé SSH si elle n'existe pas
+            if (!$vm->sshKey) {
+                $sshKeyPair = $this->generateSshKeyPair();
+                $vm->sshKey()->create([
+                    'user_id'=> Auth::user()->id,
+                    'name' => $sshKeyPair['key_name'],
+                    'public_key' => $sshKeyPair['public_key'],
+                    'private_key' => $sshKeyPair['private_key']
                 ]);
             }
-        } catch (\Exception $e) {
-            // Erreur de communication avec l'API
-            $vm->status = 'failed';
-            $vm->last_error = 'Failed to communicate with Firecracker API: ' . $e->getMessage();
-            Log::error('VM creation API error', [
-                'vm_id' => $vm->id,
+
+
+
+            try {
+                // Préparer les données pour l'API Python selon VMConfig
+                $vmData = [
+                    'name' => $vm->name,
+                    'user_id' => (string) Auth::id(), // L'API attend un string
+                    'cpu_count' => $vm->vcpu_count,
+                    'memory_size_mib' => $vm->memory_size_mib,
+                    'disk_size_gb' => $vm->disk_size_gb,
+                    'os_type' => $systemImage->name, // Le type d'OS est le nom de l'image
+                    'ssh_public_key' => $vm->sshKey->public_key,
+                    'root_password' => $validated['password'],
+                    'tap_device' => $vm->tap_device_name,
+                    'tap_ip' => $vm->tap_ip,
+                    'vm_ip' => $vm->ip_address
+                ];
+
+                // Envoyer la requête à l'API Python
+                $client = new Client();
+                $response = $client->post(config('services.firecracker.api_url') . '/vm/create', [
+                    'json' => $vmData,
+                    'timeout' => config('services.firecracker.timeout')
+                ]);
+
+                $result = json_decode($response->getBody(), true);
+
+                if ($result['success']) {
+                    // La VM a été créée avec succès
+                    $vm->status = 'created';
+                    $vm->last_error = null;
+
+                    // Stocker les données supplémentaires si présentes
+                    if (isset($result['data'])) {
+                        if (isset($result['data']['socket_path'])) {
+                            $vm->socket_path = $result['data']['socket_path'];
+                        }
+                        if (isset($result['data']['vm_path'])) {
+                            $vm->vm_path = $result['data']['vm_path'];
+                        }
+                    }
+
+                    Log::info('VM created successfully', [
+                        'vm_id' => $vm->id,
+                        'name' => $vm->name,
+                        'response' => $result
+                    ]);
+
+                    // Sauvegarder la VM
+                    $vm->save();
+                    return redirect()->route('virtual-machines.show', $vm->id)
+                        ->with('success', 'Virtual machine is being created. Please wait while we set everything up.');
+                } else {
+                    // Erreur lors de la création
+                    $vm->status = 'failed';
+                    $vm->last_error = $result['message'] ?? 'Unknown error during VM creation';
+                    Log::error('VM creation failed', [
+                        'vm_id' => $vm->id,
+                        'error' => $vm->last_error,
+                        'response' => $result
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Erreur de communication avec l'API
+                $vm->status = 'failed';
+                $vm->last_error = 'Failed to communicate with Firecracker API: ' . $e->getMessage();
+                Log::error('VM creation API error', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
+
+
+
+            return redirect()->route('virtual-machines.create')
+                ->with('error', 'An error occurred while creating the virtual machine.');
+        }catch(\Exception $e){
+            Log::info('An error occured', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+            return redirect()->route('dashboard.index')
+                ->with('error', 'Erreur lors de la création de la machine virtuelle : ' . $e->getMessage());
         }
-
-
-
-        return redirect()->route('virtual-machines.show', $vm)
-            ->with('success', 'Virtual machine is being created. Please wait while we set everything up.');
     }
 
     public function show($id)

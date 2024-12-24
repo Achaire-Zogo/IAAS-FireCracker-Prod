@@ -3,21 +3,22 @@
 source "$(dirname "$0")/check_curl_response.sh"
 
 # Vérifier le nombre d'arguments
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <user_id> <vm_name>"
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <user_id> <vm_name> <tap_device>"
     exit 1
 fi
 
 # Récupérer les arguments
 USER_ID=$1
 VM_NAME=$2
+TAP_DEVICE=$3
 
 # Définir les chemins
 VM_DIR="/opt/firecracker/vm/${USER_ID}/${VM_NAME}"
 SOCKET_PATH="/tmp/firecracker-sockets/${USER_ID}_${VM_NAME}.socket"
 LOG_PATH="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.log"
 PID_FILE="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.pid"
-TAP_DEVICE="tap_${USER_ID}_${VM_NAME}"
+
 ROOTFS_PATH="${VM_DIR}/rootfs.ext4"
 KERNEL_PATH="${VM_DIR}/vmlinux"
 

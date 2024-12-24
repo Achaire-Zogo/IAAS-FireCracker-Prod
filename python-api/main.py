@@ -52,10 +52,12 @@ class VMStartConfig(BaseModel):
 class VMStopConfig(BaseModel):
     name: str
     user_id: str  # Identifiant unique de l'utilisateur
+    tap_device: Optional[str] = "tap0"
 
 class VMDeleteConfig(BaseModel):
     name: str
     user_id: str  # Identifiant unique de l'utilisateur
+    tap_device: Optional[str] = "tap0"
 
 class VMStatusConfig(BaseModel):
     name: str
@@ -414,7 +416,7 @@ async def stop_vm(vm_stop_config: VMStopConfig):
         
         # Arrêter la VM
         stop_result = subprocess.run(
-            ["./stop_vm.sh", vm_stop_config.user_id, vm_stop_config.name],
+            ["./stop_vm.sh", vm_stop_config.user_id, vm_stop_config.name,vm_stop_config.tap_device],
             capture_output=True,
             text=True
         )
@@ -440,7 +442,7 @@ async def delete_vm(vm_delete_config: VMDeleteConfig):
         
         # Supprimer la VM
         delete_result = subprocess.run(
-            ["./delete_vm.sh", vm_delete_config.user_id, vm_delete_config.name],
+            ["./delete_vm.sh", vm_delete_config.user_id, vm_delete_config.name, vm_delete_config.tap_device],
             capture_output=True,
             text=True
         )

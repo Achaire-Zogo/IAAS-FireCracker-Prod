@@ -128,19 +128,17 @@
                                     <tr>
                                         <th>Status</th>
                                         <th>Timestamp</th>
-                                        <th>Duration</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($statusHistory as $history)
                                     <tr>
                                         <td>
-                                            <span class="badge bg-{{ $history['status'] === 'running' ? 'success' : 'secondary' }}">
-                                                {{ ucfirst($history['status']) }}
+                                            <span class="badge bg-{{ $history->status === 'running' ? 'success' : 'secondary' }}">
+                                                {{ ucfirst($history->status) }}
                                             </span>
                                         </td>
-                                        <td>{{ $history['timestamp']->format('Y-m-d H:i:s') }}</td>
-                                        <td>{{ $history['timestamp']->diffForHumans(null, true) }}</td>
+                                        <td>{{ $history->created_at->format('Y-m-d H:i:s') }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -200,9 +198,13 @@
                                 </a>
                             </div>
                             <div class="mb-0 alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i>
-                                Make sure to set appropriate permissions on the downloaded key:
-                                <code>chmod 600 {{ basename(asset('ssh_keys_vm/' . $sshInfo['private_key'])) }}</code>
+                                Your ssh root password
+                                <div class="input-group">
+                                    <input type="password" class="form-control" value="{{ $vm->root_password_hash }}" id="sshPassword" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('sshPassword').type = document.getElementById('sshPassword').type === 'text' ? 'password' : 'text'">
+                                        <i class="bi bi-eye" id="sshPasswordEye"></i>
+                                    </button>
+                                </div>
                             </div>
                         @else
                             <div class="mb-0 alert alert-warning">
@@ -230,6 +232,15 @@
                 button.innerHTML = originalHTML;
             }, 2000);
         }
+
+        document.getElementById('sshPassword').addEventListener('focus', function() {
+            document.getElementById('sshPasswordEye').classList.remove('bi-eye');
+            document.getElementById('sshPasswordEye').classList.add('bi-eye-slash');
+        });
+        document.getElementById('sshPassword').addEventListener('blur', function() {
+            document.getElementById('sshPasswordEye').classList.remove('bi-eye-slash');
+            document.getElementById('sshPasswordEye').classList.add('bi-eye');
+        });
     </script>
     @endpush
 </x-app-layout>

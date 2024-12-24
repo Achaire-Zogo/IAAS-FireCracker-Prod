@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Historic;
 use RuntimeException;
 use App\Models\SshKey;
 use GuzzleHttp\Client;
@@ -216,6 +217,11 @@ class VirtualMachineController extends Controller
                     // Sauvegarder la VM
                     $vm->status = 'stopped';
                     $vm->save();
+                    //Historique
+                    $hist = new Historic();
+                    $hist->vm_id = $vm->id;
+                    $hist->status = 'created';
+                    $hist->save();
                     return redirect()->route('virtual-machines.show', $vm->id)
                         ->with('success', 'Virtual machine is being created. Please wait while we set everything up.');
                 } else {
@@ -229,7 +235,7 @@ class VirtualMachineController extends Controller
                 }
             } catch (\Exception $e) {
                 // Erreur de communication avec l'API
-                $vm->status = 'failed';
+                // $vm->status = 'failed';
 
                 Log::error('VM creation API error', [
                     'error' => $e->getMessage(),
@@ -272,11 +278,9 @@ class VirtualMachineController extends Controller
         ];
 
         // Récupérer l'historique des statuts (à implémenter avec un modèle VmStatusHistory)
-        $statusHistory = [
-            ['status' => 'creating', 'timestamp' => $vm->created_at],
-            ['status' => 'running', 'timestamp' => $vm->created_at->addMinutes(2)],
-            // Ajouter d'autres statuts selon l'historique
-        ];
+        $statusHistory = Historic::where('vm_id', $vm->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         // Préparer les informations de connexion SSH
         $sshInfo = [
@@ -332,6 +336,11 @@ class VirtualMachineController extends Controller
             if ($result['success']) {
                 $vm->status = 'running';
                 $vm->save();
+                //Historique
+                $hist = new Historic();
+                $hist->vm_id = $vm->id;
+                $hist->status = 'running';
+                $hist->save();
 
                 Log::info('VM started successfully', [
                     'vm_id' => $vm->id,
@@ -344,6 +353,11 @@ class VirtualMachineController extends Controller
             } else {
                 $vm->status = 'error';
                 $vm->save();
+                //Historique
+                $hist = new Historic();
+                $hist->vm_id = $vm->id;
+                $hist->status = 'error';
+                $hist->save();
 
                 Log::error('VM start failed', [
                     'vm_id' => $vm->id,
@@ -357,6 +371,11 @@ class VirtualMachineController extends Controller
         } catch (\Exception $e) {
             $vm->status = 'error';
             $vm->save();
+            //Historique
+            $hist = new Historic();
+            $hist->vm_id = $vm->id;
+            $hist->status = 'error';
+            $hist->save();
 
             Log::error('VM start API error', [
                 'vm_id' => $vm->id,
@@ -391,6 +410,11 @@ class VirtualMachineController extends Controller
 
             $vm->status = 'stopped';
             $vm->save();
+            //Historique
+            $hist = new Historic();
+            $hist->vm_id = $vm->id;
+            $hist->status = 'stopped';
+            $hist->save();
 
             return redirect()->route('virtual-machines.show', $vm)
                 ->with('success', 'Machine virtuelle arrêtée avec succès');
@@ -435,6 +459,7 @@ class VirtualMachineController extends Controller
 
             // Supprimer la VM de la base de données
             $vm->delete();
+
 
             return redirect()->route('dashboard.index')
                 ->with('success', 'Machine virtuelle supprimée avec succès.');

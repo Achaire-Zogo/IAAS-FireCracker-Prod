@@ -142,15 +142,19 @@
                                 <td>${{ number_format($vm->total_cost, 2) }}</td>
                                 <td class="text-end">
                                     <div class="btn-group">
-                                        <a href="{{ route('virtual-machines.show', $vm->id) }}"
-                                           class="btn btn-sm btn-outline-primary">Details</a>
+                                        <a href="{{ route('virtual-machines.show', $vm->id) }}" class="btn btn-sm btn-outline-primary">
+                                           Details
+                                        </a>
+                                        &nbsp;
                                         @if($vm->status === 'stopped')
-                                        <form action="{{ route('virtual-machines.start', $vm->id) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('virtual-machines.start', $vm->id) }}" method="POST" class="d-inline"
+                                            onsubmit="return confirm('Are you sure you want to start this VM?');">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-success">Start</button>
                                         </form>
                                         @elseif($vm->status === 'running')
-                                        <form action="{{ route('virtual-machines.stop', $vm->id) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('virtual-machines.stop', $vm->id) }}" method="POST" class="d-inline"
+                                            onsubmit="return confirm('Are you sure you want to stop this VM?');">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-warning">Stop</button>
                                         </form>

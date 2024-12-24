@@ -3,7 +3,7 @@
         <!-- En-tête avec les actions -->
         <div class="mb-4 d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="h3 mb-0">{{ $vm->name }}</h1>
+                <h1 class="mb-0 h3">{{ $vm->name }}</h1>
                 <p class="mb-0 text-muted">
                     <span class="badge bg-{{ $vm->status === 'running' ? 'success' : 'secondary' }}">
                         {{ ucfirst($vm->status) }}
@@ -12,29 +12,32 @@
                 </p>
             </div>
             <div class="gap-2 d-flex">
-                @if($vm->status === 'stopped')
+                @if(in_array($vm->status, ['stopped', 'created', 'error']))
                     <form action="{{ route('virtual-machines.start', $vm->id) }}" method="POST">
                         @csrf
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-play-fill me-2"></i>Start
                         </button>
                     </form>
+
+                    <form action="{{ route('virtual-machines.destroy', $vm->id) }}" method="POST"
+                        onsubmit="return confirm('Are you sure you want to delete this VM?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Delete
+                        </button>
+                    </form>
                 @elseif($vm->status === 'running')
-                    <form action="{{ route('virtual-machines.stop', $vm->id) }}" method="POST">
+                    <form action="{{ route('virtual-machines.stop', $vm->id) }}" method="POST"
+                        onsubmit="return confirm('Are you sure you want to stop this VM?');">
                         @csrf
                         <button type="submit" class="btn btn-warning">
                             <i class="bi bi-stop-fill me-2"></i>Stop
                         </button>
                     </form>
                 @endif
-                <form action="{{ route('virtual-machines.destroy', $vm->id) }}" method="POST" 
-                    onsubmit="return confirm('Are you sure you want to delete this VM?');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash me-2"></i>Delete
-                    </button>
-                </form>
+
             </div>
         </div>
 
@@ -48,30 +51,30 @@
                         <div class="row g-4">
                             <!-- CPU Usage -->
                             <div class="col-md-6">
-                                <div class="p-3 bg-light rounded">
+                                <div class="p-3 rounded bg-light">
                                     <h6 class="mb-2">CPU Usage</h6>
-                                    <div class="progress mb-2" style="height: 10px;">
-                                        <div class="progress-bar" role="progressbar" 
+                                    <div class="mb-2 progress" style="height: 10px;">
+                                        <div class="progress-bar" role="progressbar"
                                             style="width: {{ $metrics['cpu_usage'] }}%"
-                                            aria-valuenow="{{ $metrics['cpu_usage'] }}" 
+                                            aria-valuenow="{{ $metrics['cpu_usage'] }}"
                                             aria-valuemin="0" aria-valuemax="100">
                                         </div>
                                     </div>
                                     <small class="text-muted">{{ $metrics['cpu_usage'] }}% of {{ $vm->vcpu_count }} vCPUs</small>
                                 </div>
                             </div>
-                            
+
                             <!-- Memory Usage -->
                             <div class="col-md-6">
-                                <div class="p-3 bg-light rounded">
+                                <div class="p-3 rounded bg-light">
                                     <h6 class="mb-2">Memory Usage</h6>
-                                    <div class="progress mb-2" style="height: 10px;">
+                                    <div class="mb-2 progress" style="height: 10px;">
                                         @php
                                             $memoryPercentage = ($metrics['memory_usage'] / $vm->memory_size_mib) * 100;
                                         @endphp
-                                        <div class="progress-bar" role="progressbar" 
+                                        <div class="progress-bar" role="progressbar"
                                             style="width: {{ $memoryPercentage }}%"
-                                            aria-valuenow="{{ $memoryPercentage }}" 
+                                            aria-valuenow="{{ $memoryPercentage }}"
                                             aria-valuemin="0" aria-valuemax="100">
                                         </div>
                                     </div>
@@ -81,15 +84,15 @@
 
                             <!-- Disk Usage -->
                             <div class="col-md-6">
-                                <div class="p-3 bg-light rounded">
+                                <div class="p-3 rounded bg-light">
                                     <h6 class="mb-2">Disk Usage</h6>
-                                    <div class="progress mb-2" style="height: 10px;">
+                                    <div class="mb-2 progress" style="height: 10px;">
                                         @php
                                             $diskPercentage = ($metrics['disk_usage'] / ($vm->disk_size_gb * 1024)) * 100;
                                         @endphp
-                                        <div class="progress-bar" role="progressbar" 
+                                        <div class="progress-bar" role="progressbar"
                                             style="width: {{ $diskPercentage }}%"
-                                            aria-valuenow="{{ $diskPercentage }}" 
+                                            aria-valuenow="{{ $diskPercentage }}"
                                             aria-valuemin="0" aria-valuemax="100">
                                         </div>
                                     </div>
@@ -99,9 +102,9 @@
 
                             <!-- Network Usage -->
                             <div class="col-md-6">
-                                <div class="p-3 bg-light rounded">
+                                <div class="p-3 rounded bg-light">
                                     <h6 class="mb-2">Network Usage</h6>
-                                    <div class="d-flex justify-content-between mb-1">
+                                    <div class="mb-1 d-flex justify-content-between">
                                         <small class="text-success">
                                             <i class="bi bi-arrow-down me-1"></i>{{ $metrics['network_rx'] }} MB
                                         </small>
@@ -153,7 +156,7 @@
                 <div class="mb-4 border-0 shadow-sm card">
                     <div class="card-body">
                         <h2 class="mb-4 h5">VM Information</h2>
-                        <dl class="row mb-0">
+                        <dl class="mb-0 row">
                             <dt class="col-sm-5">Offer</dt>
                             <dd class="col-sm-7">{{ $vm->vmOffer->name }}</dd>
 
@@ -183,8 +186,7 @@
                             <div class="mb-3">
                                 <label class="form-label">SSH Command</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" readonly
-                                        value="ssh -i {{ basename($sshInfo['key_path']) }} -p {{ $sshInfo['port'] }} {{ $sshInfo['username'] }}@{{ $sshInfo['host'] }}">
+                                    <span class="form-control">ssh {{ $sshInfo['username'] }} @ {{ $vm->ip_address }}</span>
                                     <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
@@ -192,18 +194,18 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Download SSH Key</label>
-                                <a href="{{ asset('ssh_keys_vm/' . basename($sshInfo['key_path'])) }}" 
+                                <a href="{{ asset('ssh_keys_vm/' . $sshInfo['private_key']) }}" download
                                    class="btn btn-outline-primary d-block">
                                     <i class="bi bi-download me-2"></i>Download Private Key
                                 </a>
                             </div>
-                            <div class="alert alert-info mb-0">
+                            <div class="mb-0 alert alert-info">
                                 <i class="bi bi-info-circle me-2"></i>
                                 Make sure to set appropriate permissions on the downloaded key:
-                                <code>chmod 600 {{ basename($sshInfo['key_path']) }}</code>
+                                <code>chmod 600 {{ basename(asset('ssh_keys_vm/' . $sshInfo['private_key'])) }}</code>
                             </div>
                         @else
-                            <div class="alert alert-warning mb-0">
+                            <div class="mb-0 alert alert-warning">
                                 <i class="bi bi-exclamation-triangle me-2"></i>
                                 SSH connection is only available when the VM is running.
                             </div>
@@ -219,7 +221,7 @@
         function copyToClipboard(element) {
             element.select();
             document.execCommand('copy');
-            
+
             // Optional: Show feedback
             const button = element.nextElementSibling;
             const originalHTML = button.innerHTML;

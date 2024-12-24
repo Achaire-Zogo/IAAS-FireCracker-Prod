@@ -50,7 +50,7 @@ fi
 
 sudo cp "${ROOTFS_DIR}/${OS_TYPE}.squashfs.upstream" "${VM_DIR}/"
 sudo cp "${BASE_DIR}/vmlinux-5.10.225" "${VM_DIR}/"
-sudo chmod -R 777 "${VM_DIR}/vmlinux-5.10.225"
+
 
 cd "${VM_DIR}"
 
@@ -70,6 +70,7 @@ sudo chroot squashfs-root sed -i 's/#PermitRootLogin prohibit-password/PermitRoo
 sudo chroot squashfs-root sed -i 's/#PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
 sudo chroot squashfs-root systemctl restart ssh
 
+
 echo 'nameserver 8.8.8.8' > squashfs-root/etc/resolv.conf
 
 # Create ext4 filesystem image
@@ -77,6 +78,8 @@ CUSTOM_VM_DIR="${VM_DIR}/${OS_TYPE}.ext4"
 sudo chown -R root:root squashfs-root
 truncate -s ${DISK_SIZE_GB}G "${OS_TYPE}.ext4"
 sudo mkfs.ext4 -d squashfs-root -F "${CUSTOM_VM_DIR}"
+
+sudo chmod -R 777 "${VM_DIR}"
 
 # Cleanup
 cd - > /dev/null

@@ -71,17 +71,13 @@ echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured
 sudo sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
 echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Enabled IP forwarding" >> "$LOG_PATH"
 
+HOST_IFACE=$(ip -j route list default |jq -r '.[0].dev')
+
 # Configurer iptables pour le NAT
 sudo iptables -P FORWARD ACCEPT
 sudo iptables -t nat -D POSTROUTING -o "$HOST_IFACE" -j MASQUERADE || true
 sudo iptables -t nat -A POSTROUTING -o "$HOST_IFACE" -j MASQUERADE
-echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured iptables NAT rules" >> "$LOG_PATH"
-
-HOST_IFACE=$(ip -j route list default |jq -r '.[0].dev')
-
-# Set up microVM internet access
-sudo iptables -t nat -D POSTROUTING -o "$HOST_IFACE" -j MASQUERADE || true
-sudo iptables -t nat -A POSTROUTING -o "$HOST_IFACE" -j MASQUERADE
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured iptables NAT rules $HOST_IFACE" >> "$LOG_PATH"
 
 # Setup internet access in the guest
 sudo ip route add default via "$TAP_IP" dev eth0
@@ -178,5 +174,34 @@ check_curl_response "$response" "Configuring balloon" ${LINENO} "$LOG_PATH" || {
 }
 
 echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured balloon" >> "$LOG_PATH"
+
+# Configurer le réseau dans l'image
+MOUNT_DIR="/mnt"
+sudo mkdir -p "$MOUNT_DIR"
+sudo mount -o loop "$CUSTOM_VM" "$MOUNT_DIR"
+
+mkdir -p "$MOUNT_DIR/etc/netplan"
+cat > "$MOUNT_DIR/etc/netplan/01-netcfg.yaml" << EOF
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      addresses: ["${VM_IP}${MASK_SHORT}"]
+      routes:
+        - to: default
+          via: ${TAP_IP}
+      nameservers:
+        addresses: [8.8.8.8]
+      dhcp4: false
+EOF
+
+# Appliquer la configuration réseau
+chroot "$MOUNT_DIR" netplan generate
+chroot "$MOUNT_DIR" netplan apply
+
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured network settings in guest OS" >> "$LOG_PATH"
+
+sudo umount "$MOUNT_DIR"
 
 echo "VM configuration completed successfully"

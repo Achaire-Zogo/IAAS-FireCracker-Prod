@@ -49,24 +49,41 @@ class VirtualMachineController extends Controller
         ];
     }
 
-    private function generateMacAddress()
+    private function generateMacAddress($ip_address)
     {
-        // Le format de base pour l'adresse MAC : 06:00:AC:10:00:XX
-        // Où XX est un nombre hexadécimal entre 02 et FF (2-255 en décimal)
-        // Cela donnera des adresses IP 172.16.0.2 à 172.16.0.255
+        // Extraire les octets de l'adresse IP
+        preg_match('/172\.16\.(\d+)\.(\d+)/', $ip_address, $matches);
 
-        $lastByte = sprintf('%02X', rand(2, 255)); // Génère un nombre entre 02 et FF en hex
-        return "06:00:AC:10:00:{$lastByte}";
+        // Utiliser les octets de l'IP pour générer une MAC unique
+        return sprintf("06:00:AC:10:%02x:%02x",
+            $matches[1],  // Troisième octet de l'IP
+            $matches[2]   // Quatrième octet de l'IP
+        );
     }
 
-    private function generateIpFromMac($macAddress)
+    private function generateIpFromSequence($sequence)
     {
-        // Extraire le dernier octet de l'adresse MAC (en hex)
-        $lastByte = substr($macAddress, -2);
-        // Convertir en décimal
-        $lastOctet = hexdec($lastByte);
-        // Construire l'adresse IP
-        return "172.16.0.{$lastOctet}";
+        // Pour un sous-réseau /30, A = 4
+        $A = 4;
+
+        // Calculer O à partir de l'IP de la VM
+        $octet3 = ($A * $sequence + 2) / 256;
+        $octet4 = ($A * $sequence + 2) % 256;
+
+        return sprintf("172.16.%d.%d", $octet3, $octet4);
+    }
+
+    private function generateTapIpFromSequence($sequence)
+    {
+
+        // Pour un sous-réseau /30, A = 4
+        $A = 4;
+
+        // Calculer O à partir de l'IP de la VM
+        $octet3 = ($A * $sequence + 1) / 256;
+        $octet4 = ($A * $sequence + 1) % 256;
+
+        return sprintf("172.16.%d.%d", $octet3, $octet4);
     }
 
     public function index()
@@ -114,11 +131,8 @@ class VirtualMachineController extends Controller
             $vm->memory_size_mib = $offer->memory_size_mib;
             $vm->disk_size_gb = $offer->disk_size_gb;
 
-            // Configurer le réseau
-            $vm->mac_address = $this->generateMacAddress();
-            $vm->ip_address = $this->generateIpFromMac($vm->mac_address);
-            $vm->tap_device_name = 'tap0';
-            $vm->tap_ip = '172.16.0.1'; // IP fixe pour l'interface TAP
+
+
             $vm->network_namespace = 'ns_' . Str::slug($vm->name);
 
             // Configurer SSH
@@ -130,20 +144,31 @@ class VirtualMachineController extends Controller
             $vm->status = 'creating';
 
             // Créer une clé SSH si elle n'existe pas
+            $ssh = new SshKey();
             if (!$vm->sshKey) {
                 $sshKeyPair = $this->generateSshKeyPair();
-                $vm->sshKey()->create([
-                    'user_id'=> Auth::user()->id,
-                    'name' => $sshKeyPair['key_name'],
-                    'public_key' => $sshKeyPair['public_key'],
-                    'private_key' => $sshKeyPair['private_key']
-                ]);
+
+
+                $ssh->user_id = Auth::user()->id;
+                $ssh->name = $sshKeyPair['key_name'];
+                $ssh->public_key = $sshKeyPair['public_key'];
+                $ssh->private_key = $sshKeyPair['private_key'];
+                $ssh->save();
             }
 
 
 
             try {
                 // Préparer les données pour l'API Python selon VMConfig
+                $vm->save();
+                // Configurer le réseau
+                $vm->ssh_key_id = $ssh->id;
+                $vm->tap_device_name = 'tap'.$vm->id;
+                $vm->ip_address = $this->generateIpFromSequence($vm->id);
+                $vm->tap_ip = $this->generateTapIpFromSequence($vm->id);
+
+                $vm->mac_address = $this->generateMacAddress($vm->ip_address);
+
                 $vmData = [
                     'name' => $vm->name,
                     'user_id' => (string) Auth::id(), // L'API attend un string
@@ -258,7 +283,7 @@ class VirtualMachineController extends Controller
             'host' => $vm->ip_address,
             'port' => $vm->ssh_port,
             'username' => 'root',
-            'key_path' => $vm->sshKey ? public_path("ssh_keys_vm/{$vm->sshKey->name}") : null
+            'private_key' => $vm->sshKey->private_key
         ];
 
         return view('virtual-machines.show', compact(
@@ -349,14 +374,36 @@ class VirtualMachineController extends Controller
         $vm = VirtualMachine::findOrFail($id);
 
         try {
-            $this->containerdService->stopVM($vm->name);
-            $vm->update(['status' => 'stopped']);
+            $client = new Client();
+            $response = $client->post(env('API_FIRECRACKER_URL') . '/vm/stop', [
+                'json' => [
+                    'name' => $vm->name,
+                    'user_id' => (string) Auth::id()
+                ]
+            ]);
 
-            return redirect()->route('dashboard')
-                ->with('success', 'Machine virtuelle arrêtée avec succès.');
-        } catch (RuntimeException $e) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Échec de l\'arrêt de la machine virtuelle : ' . $e->getMessage());
+            $result = json_decode($response->getBody(), true);
+            Log::info('VM stopped successfully', [
+                'vm_id' => $vm->id,
+                'name' => $vm->name,
+                'response' => $result
+            ]);
+
+            $vm->status = 'stopped';
+            $vm->save();
+
+            return redirect()->route('virtual-machines.show', $vm)
+                ->with('success', 'Machine virtuelle arrêtée avec succès');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to stop VM', [
+                'vm_id' => $vm->id,
+                'name' => $vm->name,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('virtual-machines.show', $vm)
+                ->with('error', 'Erreur lors de l\'arrêt de la machine virtuelle : ' . $e->getMessage());
         }
     }
 
@@ -365,15 +412,23 @@ class VirtualMachineController extends Controller
         $vm = VirtualMachine::findOrFail($id);
 
         try {
-            // Arrêter la VM si elle est en cours d'exécution
-            if ($vm->status === 'running') {
-                $this->containerdService->stopVM($vm->name);
-            }
+            // Appeler l'API Python pour supprimer la VM
+            $client = new Client();
+            $response = $client->post(env('API_FIRECRACKER_URL') . '/vm/delete', [
+                'json' => [
+                    'name' => $vm->name,
+                    'user_id' => (string) Auth::id()
+                ]
+            ]);
 
-            // Supprimer la VM de Containerd
-            $this->containerdService->deleteVM($vm->name);
+            $result = json_decode($response->getBody(), true);
+            Log::info('VM deleted successfully', [
+                'vm_id' => $vm->id,
+                'name' => $vm->name,
+                'response' => $result
+            ]);
 
-            // Supprimer la clé SSH associée
+            // Supprimer la clé SSH associée si elle existe
             if ($vm->sshKey) {
                 $vm->sshKey->delete();
             }
@@ -381,9 +436,15 @@ class VirtualMachineController extends Controller
             // Supprimer la VM de la base de données
             $vm->delete();
 
-            return redirect()->route('dashboard')
+            return redirect()->route('dashboard.index')
                 ->with('success', 'Machine virtuelle supprimée avec succès.');
-        } catch (RuntimeException $e) {
+        } catch (\Exception $e) {
+            Log::error('Failed to delete VM', [
+                'vm_id' => $vm->id,
+                'name' => $vm->name,
+                'error' => $e->getMessage()
+            ]);
+
             return redirect()->route('dashboard')
                 ->with('error', 'Échec de la suppression de la machine virtuelle : ' . $e->getMessage());
         }
@@ -415,15 +476,5 @@ class VirtualMachineController extends Controller
         ]);
     }
 
-    private function getRootfsPath(string $osType): string
-    {
-        $basePath = config('services.containerd.rootfs_path');
 
-        return match($osType) {
-            'ubuntu' => "{$basePath}/ubuntu-22.04.ext4",
-            'debian' => "{$basePath}/debian-11.ext4",
-            'centos' => "{$basePath}/centos-9.ext4",
-            default => throw new RuntimeException("Type d'OS non supporté : {$osType}")
-        };
-    }
 }

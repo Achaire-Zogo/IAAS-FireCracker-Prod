@@ -24,13 +24,9 @@ VM_MAC=${10}
 VM_DIR="/opt/firecracker/vm/${USER_ID}/${VM_NAME}"
 SOCKET_PATH="/tmp/firecracker-sockets/${USER_ID}_${VM_NAME}.socket"
 LOG_PATH="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.log"
-PID_FILE="/opt/firecracker/logs/firecracker-${USER_ID}_${VM_NAME}.pid"
 KERNEL_PATH="${VM_DIR}/vmlinux-5.10.225"
 CUSTOM_VM="${VM_DIR}/${OS_TYPE}.ext4"
 
-TAP_DEVICE="${TAP_DEVICE}"
-TAP_IP="${TAP_IP}"
-VM_IP="${VM_IP}"
 MASK_SHORT="/30"
 FC_MAC="${VM_MAC}"
 
@@ -54,8 +50,6 @@ check_curl_response "$response" "Configuring kernel" ${LINENO} "$LOG_PATH" || {
     get_last_error "$LOG_PATH"
     exit 1
 }
-
-
 
 # Configuration de la machine
 response=$(curl --unix-socket "${SOCKET_PATH}" -i \
@@ -90,12 +84,36 @@ check_curl_response "$response" "Configuring rootfs" ${LINENO} "$LOG_PATH" || {
     exit 1
 }
 
-# Configuration du réseau
-ip link set "${TAP_DEVICE}" up || {
-    ip tuntap add "${TAP_DEVICE}" mode tap
-    ip link set "${TAP_DEVICE}" up
-    ip addr add "${TAP_IP}${MASK_SHORT}" dev "${TAP_DEVICE}"
-}
+# Journaliser la configuration réseau
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configuring network: TAP=${TAP_DEVICE}, TAP_IP=${TAP_IP}, VM_IP=${VM_IP}, MAC=${FC_MAC}" >> "$LOG_PATH"
+
+# Supprimer l'ancien TAP s'il existe
+sudo ip link del "$TAP_DEVICE" 2> /dev/null || true
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - start_vm.sh - INFO - Cleaned up old TAP device: ${TAP_DEVICE}" >> "$LOG_PATH"
+
+# Créer et configurer le TAP device
+sudo ip tuntap add "$TAP_DEVICE" mode tap
+sudo ip addr add "${TAP_IP}${MASK_SHORT}" dev "$TAP_DEVICE"
+sudo ip link set "$TAP_DEVICE" up
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - start_vm.sh - INFO - Created and configured TAP device: $TAP_DEVICE" >> "$LOG_PATH"
+
+HOST_IFACE=$(ip -j route list default |jq -r '.[0].dev')
+# Configurer le routage et NAT
+sudo sysctl -w net.ipv4.ip_forward=1
+sudo iptables -P FORWARD ACCEPT
+sudo iptables -t nat -D POSTROUTING -o "$HOST_IFACE" -j MASQUERADE || true
+sudo iptables -t nat -A POSTROUTING -o "$HOST_IFACE" -j MASQUERADE
+sudo iptables -A FORWARD -i "$TAP_DEVICE" -o "$HOST_IFACE" -j ACCEPT
+sudo iptables -A FORWARD -o "$TAP_DEVICE" -i "$HOST_IFACE" -j ACCEPT
+
+# Sauvegarder les règles iptables
+sudo sh -c "iptables-save > /etc/iptables/rules.v4"
+echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - start_vm.sh - INFO - Configured routing and NAT for $TAP_DEVICE" >> "$LOG_PATH"
+
+# This tries to determine the name of the host network interface to forward
+# VM's outbound network traffic through. If outbound traffic doesn't work,
+# double check this returns the correct interface!
+
 
 # Configuration du réseau
 network_config="{
@@ -113,8 +131,6 @@ check_curl_response "$response" "Configuring network interface" ${LINENO} "$LOG_
     get_last_error "$LOG_PATH"
     exit 1
 }
-
-
 
 # Configuration du balloon
 response=$(curl --unix-socket "${SOCKET_PATH}" -i \

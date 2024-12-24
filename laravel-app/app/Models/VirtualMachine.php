@@ -82,7 +82,7 @@ class VirtualMachine extends Model
 
     public function sshKey()
     {
-        return $this->belongsTo(SshKey::class);
+        return $this->belongsTo(SshKey::class,'ssh_key_id');
     }
 
     public function systemImage()

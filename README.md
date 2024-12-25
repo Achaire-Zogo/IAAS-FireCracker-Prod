@@ -1,177 +1,234 @@
-# IAAS FireCracker - Cloud VM Management Platform
+# IAAS-FireCracker : Plateforme de Gestion de Machines Virtuelles
 
-A modern and user-friendly Infrastructure as a Service (IAAS) platform built with Laravel, allowing users to create and manage virtual machines using FireCracker technology.
+## 📋 Description du Projet
 
-![Dashboard Preview](docs/images/dashboard.png)
+IAAS-FireCracker est une plateforme complète de gestion de machines virtuelles basée sur la technologie Firecracker de AWS. Cette solution combine une interface web élégante développée avec Laravel et une API Python robuste pour offrir une expérience IaaS (Infrastructure as a Service) complète.
 
-## Features
+![Dashboard Admin](docs/images/admin/dashboard.png)
 
-- **User Authentication & Authorization**
-  - Secure registration and login
-  - Role-based access control
-  - Password reset functionality
+### 🎯 Fonctionnalités Principales
 
-- **Virtual Machine Management**
-  - Create custom VMs with various configurations
-  - Choose from multiple VM offers (CPU, RAM, Storage)
-  - Select from different system images
-  - Start/Stop VM operations
-  - Real-time VM status monitoring
+- **Gestion des Machines Virtuelles**
+  - Création et déploiement rapide de VMs
+  - Surveillance en temps réel de l'état des VMs
+  - Gestion du cycle de vie (démarrage, arrêt, suppression)
+  - Configuration personnalisée des ressources
 
-- **Dashboard & Statistics**
-  - Overview of all VMs
-  - Resource usage statistics
-  - Cost tracking and billing information
-  - System health monitoring
+- **Interface Administrateur**
+  - Tableau de bord complet
+  - Gestion des utilisateurs
+  - Gestion des offres VM
+  - Suivi des images système
+  - Historique des opérations
 
-- **Security**
-  - Secure VM access via SSH
-  - Encrypted root passwords
-  - CSRF protection
-  - XSS prevention
+- **Espace Utilisateur**
+  - Interface intuitive de gestion des VMs
+  - Gestion des clés SSH
+  - Suivi des ressources utilisées
+  - Configuration personnalisée
 
-## Prerequisites
+## 🔧 Prérequis
 
-- PHP >= 8.8
-- Composer
-- Node.js & NPM
-- MySQL >= 8.0
-- FireCracker installed and configured
-- Linux environment (Ubuntu 20.04 or later recommended)
+### Système
+- Ubuntu 20.04 LTS ou version supérieure
+- Minimum 4GB RAM
+- 20GB d'espace disque
+- Processeur compatible avec la virtualisation
 
-## Installation
+### Logiciels Requis
+1. **Apache2**
+   ```bash
+   sudo apt update
+   sudo apt install apache2
+   ```
 
-1. **Clone the repository**
-```bash
-git clone https://github.com/yourusername/IAAS-FireCracker.git
-cd IAAS-FireCracker/laravel-app
-```
+2. **PHP 8.2**
+   ```bash
+   sudo apt install software-properties-common
+   sudo add-apt-repository ppa:ondrej/php
+   sudo apt update
+   sudo apt install php8.2 php8.2-common php8.2-mysql php8.2-xml php8.2-curl php8.2-gd php8.2-mbstring php8.2-zip php8.2-fpm
+   ```
 
-2. **Install PHP dependencies**
-```bash
-composer install
-```
+3. **MySQL**
+   ```bash
+   sudo apt install mysql-server
+   sudo mysql_secure_installation
+   ```
 
-3. **Install JavaScript dependencies**
-```bash
-npm install
-```
+4. **Composer**
+   ```bash
+   curl -sS https://getcomposer.org/installer | php
+   sudo mv composer.phar /usr/local/bin/composer
+   ```
 
-4. **Environment Setup**
-```bash
-cp .env.example .env
-php artisan key:generate
-```
+5. **Python 3.8+**
+   ```bash
+   sudo apt install python3 python3-pip
+   ```
 
-5. **Configure your `.env` file**
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=your_database
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
+## 🚀 Installation
 
-FIRECRACKER_PATH=/path/to/firecracker
-KERNEL_PATH=/path/to/kernel
-ROOTFS_PATH=/path/to/rootfs
-```
+### 1. Configuration de l'Application Laravel
 
-6. **Database Setup**
-```bash
-php artisan migrate
-php artisan db:seed
-```
+1. **Cloner le projet**
+   ```bash
+   git clone https://github.com/Achaire-Zogo/IAAS-FireCracker.git
+   cd IAAS-FireCracker
+   ```
 
-7. **Build assets**
-```bash
-npm run build
-```
+2. **Configuration de Laravel**
+   ```bash
+   cd laravel-app
+   composer install
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-## Running the Application
+3. **Configuration de la base de données**
+   ```bash
+   # Dans le fichier .env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=iaas_firecracker
+   DB_USERNAME=votre_utilisateur
+   DB_PASSWORD=votre_mot_de_passe
+   ```
 
-1. **Start the Laravel development server**
-```bash
-php artisan serve --host 0.0.0.0
-```
+4. **Création de la base de données**
+   ```bash
+   mysql -u root -p
+   CREATE DATABASE iaas_firecracker;
+   exit;
+   ```
 
-2. **Start the Vite development server (in development)**
-```bash
-npm run dev
-```
+5. **Migration et seeding**
+   ```bash
+   php artisan migrate
+   php artisan db:seed
+   ```
 
-The application will be available at `http://localhost:8000`
+6. **Configuration d'Apache**
+   ```bash
+   sudo nano /etc/apache2/sites-available/iaas-firecracker.conf
+   ```
+   Ajouter :
+   ```apache
+   <VirtualHost *:80>
+       ServerName iaas-firecracker.local
+       DocumentRoot /var/www/IAAS-FireCracker/laravel-app/public
+       
+       <Directory /var/www/IAAS-FireCracker/laravel-app/public>
+           AllowOverride All
+           Require all granted
+       </Directory>
+   </VirtualHost>
+   ```
 
-## Usage
+7. **Activation du site**
+   ```bash
+   sudo a2ensite iaas-firecracker.conf
+   sudo a2enmod rewrite
+   sudo systemctl restart apache2
+   ```
 
-1. **Register a new account**
-   - Visit the registration page
-   - Fill in your details
-   - Verify your email address
+### 2. Configuration de l'API Python
 
-2. **Create a Virtual Machine**
-   - Go to the dashboard
-   - Click "New VM"
-   - Select VM offer and system image
-   - Configure VM settings
-   - Click "Create"
+1. **Installation des dépendances système**
+   ```bash
+   sudo apt install -y qemu-kvm
+   sudo apt install -y python3-venv
+   ```
 
-3. **Manage Your VMs**
-   - View VM details
-   - Start/Stop VMs
-   - Monitor resource usage
-   - Access VM via SSH
+2. **Configuration de l'environnement Python**
+   ```bash
+   cd python-api
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-## Configuration
+3. **Installation de Firecracker**
+   ```bash
+   sudo ./install_firecracker.sh
+   sudo ./setup_firecracker.sh
+   ```
 
-### FireCracker Setup
+4. **Configuration des permissions**
+   ```bash
+   sudo cp firecracker-sudoers /etc/sudoers.d/firecracker
+   sudo chmod 440 /etc/sudoers.d/firecracker
+   ```
 
-1. Install FireCracker:
-```bash
-wget https://github.com/firecracker-microvm/firecracker/releases/latest/download/firecracker-x86_64
-chmod +x firecracker-x86_64
-sudo mv firecracker-x86_64 /usr/local/bin/firecracker
-```
+5. **Création des dossiers nécessaires**
+   ```bash
+   sudo mkdir -p /var/lib/firecracker/images
+   sudo mkdir -p /var/lib/firecracker/kernels
+   sudo mkdir -p /var/lib/firecracker/sockets
+   sudo chown -R www-data:www-data /var/lib/firecracker
+   ```
 
-2. Configure network:
-```bash
-sudo ip tuntap add tap0 mode tap
-sudo ip addr add 172.16.0.1/24 dev tap0
-sudo ip link set tap0 up
-```
+## 🎮 Utilisation
 
-### System Images
+### Démarrage des Services
 
-Place your system images in the configured directory and update the database:
-```bash
-php artisan images:sync
-```
+1. **API Python**
+   ```bash
+   cd python-api
+   source venv/bin/activate
+   sudo python3 main.py
+   ```
 
-## Security
+2. **Application Laravel**
+   L'application est déjà accessible via Apache à l'adresse configurée.
 
-- All VM operations require authentication
-- Root passwords are encrypted
-- Network isolation between VMs
-- Regular security updates
+### Accès à l'Application
 
-## Contributing
+1. **Interface Administrateur**
+   - URL : `http://votre-domaine/login`
+   - Identifiants par défaut :
+     - Email : admin@example.com
+     - Mot de passe : password
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. **Interface Utilisateur**
+   - URL : `http://votre-domaine`
+   - Créez un compte utilisateur via l'interface d'inscription
 
-## License
+## 📸 Captures d'écran
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Interface Administrateur
+![Admin Dashboard](docs/images/admin/dashboard.png)
+![Gestion des VMs](docs/images/admin/vm-management.png)
 
-## Authors
+### Interface Utilisateur
+![User Dashboard](docs/images/users/dashboard.png)
+![VM Creation](docs/images/users/vm-creation.png)
 
-- Achaire ZOGO - *Initial work* - [YourGithub](https://github.com/Achaire-Zogo)
+## 🔒 Sécurité
 
-## Acknowledgments
+- Tous les mots de passe sont hashés
+- Protection CSRF activée
+- Validation des entrées utilisateur
+- Gestion des permissions par rôle
+- Journalisation des actions importantes
 
-- FireCracker team for the amazing VM technology
-- Laravel team for the excellent framework
-- Bootstrap team for the UI components
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à :
+1. Fork le projet
+2. Créer une branche pour votre fonctionnalité
+3. Commit vos changements
+4. Push sur la branche
+5. Ouvrir une Pull Request
+
+## 📝 License
+
+Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## 🆘 Support
+
+Pour toute question ou problème :
+1. Consultez la documentation
+2. Ouvrez une issue sur GitHub
+3. Contactez l'équipe de support

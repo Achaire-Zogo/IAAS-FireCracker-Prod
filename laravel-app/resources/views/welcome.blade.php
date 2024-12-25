@@ -8,7 +8,7 @@
                     <p class="mb-4 lead">{{ __('Experience lightning-fast VM deployment with our Firecracker-powered platform. Get started in minutes with secure, isolated, and high-performance virtual machines.') }}</p>
                     <div class="gap-2 d-grid d-md-flex">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="px-4 btn btn-light btn-lg">
+                            <a href="{{ route('dashboard.index') }}" class="px-4 btn btn-light btn-lg">
                                 <i class="bi bi-speedometer2 me-2"></i>{{ __('Go to Dashboard') }}
                             </a>
                         @else

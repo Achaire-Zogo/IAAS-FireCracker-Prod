@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\SshKey;
 use App\Models\SystemImage;
 use App\Models\VmOffer;
+use App\Models\Historic;
 
 class VirtualMachine extends Model
 {
@@ -93,6 +94,11 @@ class VirtualMachine extends Model
     public function vmOffer()
     {
         return $this->belongsTo(VmOffer::class);
+    }
+
+    public function historics()
+    {
+        return $this->hasMany(Historic::class, 'vm_id');
     }
 
     public function generateMacAddress()

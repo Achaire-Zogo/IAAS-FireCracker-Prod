@@ -2,6 +2,19 @@
     <div class="container py-4">
         <!-- Statistiques -->
         <div class="mb-5 row g-4">
+            @if(Auth::user()->isAdmin())
+            <div class="col-12 mb-3">
+                <div class="alert alert-info d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="bi bi-shield-lock me-2"></i>
+                        <strong>Administration Access</strong> - You have administrative privileges
+                    </div>
+                    <a href="{{ route('admin.dashboard') }}" class="btn btn-primary">
+                        <i class="bi bi-gear me-2"></i>Access Admin Panel
+                    </a>
+                </div>
+            </div>
+            @endif
             <div class="col-md-3">
                 <div class="border-0 shadow-sm card h-100">
                     <div class="card-body">

@@ -73,8 +73,8 @@ IAAS-FireCracker est une plateforme complète de gestion de machines virtuelles 
 
 1. **Cloner le projet**
    ```bash
-   git clone https://github.com/Achaire-Zogo/IAAS-FireCracker.git
-   cd IAAS-FireCracker
+   git clone https://github.com/Achaire-Zogo/IAAS-FireCracker-Prod.git
+   cd IAAS-FireCracker-Prod
    ```
 
 2. **Configuration de Laravel**

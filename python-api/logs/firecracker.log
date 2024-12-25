@@ -14,3 +14,6 @@
 2024-12-24 22:54:03,439 - __main__ - INFO - Starting VM ubuntu
 2024-12-24 23:20:27,844 - __main__ - INFO - Stopping VM: ubuntu
 2024-12-24 23:20:59,972 - __main__ - INFO - VM ubuntu stopped successfully
+2024-12-24 23:39:16,992 - __main__ - INFO - Starting Firecracker process
+2024-12-24 23:39:17,095 - __main__ - INFO - Socket is available, waiting for API
+2024-12-24 23:39:19,098 - __main__ - INFO - Starting VM ubuntu

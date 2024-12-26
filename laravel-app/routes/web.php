@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+
 Route::middleware('auth')->group(function () {
     //Route pour le Dashboard
     Route::resource('dashboard',DashboardController::class);

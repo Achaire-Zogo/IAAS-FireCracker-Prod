@@ -111,3 +111,5 @@ RTNETLINK answers: File exists
 2024-12-26 18:01:35,756 - __main__ - INFO - Starting Firecracker process
 2024-12-26 18:01:35,858 - __main__ - INFO - Socket is available, waiting for API
 2024-12-26 18:01:37,862 - __main__ - INFO - Starting VM start
+2024-12-26 19:28:59,628 - __main__ - INFO - Stopping VM: start
+2024-12-26 19:29:31,852 - __main__ - INFO - VM start stopped successfully

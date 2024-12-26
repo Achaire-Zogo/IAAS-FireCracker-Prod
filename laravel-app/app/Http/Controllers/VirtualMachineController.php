@@ -270,9 +270,9 @@ class VirtualMachineController extends Controller
 
         // Récupérer les métriques système si disponibles
         $metrics = [
-            'cpu_usage' => rand(0, 100), // À remplacer par les vraies métriques
-            'memory_usage' => rand(0, $vm->memory_size_mib),
-            'disk_usage' => rand(0, $vm->disk_size_gb * 1024), // Convertir en MB
+            'cpu_usage' => $vm->cpu_usage_percent, // À remplacer par les vraies métriques
+            'memory_usage' => rand(0, $vm->memory_usage_mib),
+            'disk_usage' => rand(0, $vm->disk_usage_bytes * 1024), // Convertir en MB
             'network_rx' => rand(0, 1000), // MB reçus
             'network_tx' => rand(0, 1000)  // MB transmis
         ];

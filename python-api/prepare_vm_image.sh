@@ -23,7 +23,7 @@ ROOTFS_DIR="${BASE_DIR}/rootfs"
 # Create directories with proper permissions
 sudo mkdir -p "${VM_DIR}"
 sudo chown -R $USER:$USER "${BASE_DIR}"
-sudo chmod -R 755 "${BASE_DIR}"
+sudo chmod -R 777 "${BASE_DIR}"
 
 # Download base image if not exists
 BASE_SQUASHFS="${ROOTFS_DIR}/${OS_TYPE}.squashfs.upstream"

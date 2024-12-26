@@ -153,18 +153,22 @@ cd ../python-api
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+end_step "Configuration de l'API Python"
 
 # Installation de Firecracker
+start_step "Configuration de firecracker"
 chmod +x install_firecracker.sh
 ./install_firecracker.sh
 chmod +x setup_firecracker.sh
 ./setup_firecracker.sh
+end_step "FireCracker installe avec success"
 
 # Configuration des permissions
 cp firecracker-sudoers /etc/sudoers.d/firecracker
 chmod 440 /etc/sudoers.d/firecracker
 
 # Création des dossiers nécessaires
+start_step "Création des dossiers nécessaires"
 mkdir -p /var/lib/firecracker/images
 mkdir -p /var/lib/firecracker/kernels
 mkdir -p /var/lib/firecracker/sockets

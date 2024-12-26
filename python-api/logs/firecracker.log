@@ -120,3 +120,9 @@ RTNETLINK answers: File exists
 2024-12-26 22:44:11,656 - __main__ - INFO - VM start stopped successfully
 2024-12-26 22:44:26,374 - __main__ - INFO - Deleting VM: start
 2024-12-26 22:44:27,174 - __main__ - INFO - VM start deleted successfully
+2024-12-26 23:34:43,341 - __main__ - INFO - Creating VM: zz for user: 1
+2024-12-26 23:34:43,342 - __main__ - INFO - Starting Firecracker process
+2024-12-26 23:34:43,445 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 23:34:45,449 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-26 23:34:53,593 - __main__ - INFO - Setting up VM
+2024-12-26 23:34:54,780 - __main__ - INFO - VM zz created successfully

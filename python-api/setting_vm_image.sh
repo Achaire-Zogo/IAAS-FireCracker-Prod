@@ -50,6 +50,7 @@ TAP_IP="${TAP_IP}"
 VM_IP="${VM_IP}"
 MASK_SHORT="/30"
 FC_MAC="${VM_MAC}"
+IFACE_ID="${TAP_DEV}"
 
 # Journaliser la configuration réseau
 echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configuring network: TAP=${TAP_DEV}, TAP_IP=${TAP_IP}, VM_IP=${VM_IP}, MAC=${FC_MAC}" >> "$LOG_PATH"
@@ -80,7 +81,7 @@ sudo iptables -t nat -A POSTROUTING -o "$HOST_IFACE" -j MASQUERADE
 echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured iptables NAT rules $HOST_IFACE" >> "$LOG_PATH"
 
 # Setup internet access in the guest
-sudo ip route add default via "$TAP_IP" dev eth0
+sudo ip route add default via "$TAP_IP" dev ${TAP_DEV}
 
 # Setup DNS resolution in the guest
 sudo echo 'nameserver 8.8.8.8' > /etc/resolv.conf
@@ -141,12 +142,12 @@ echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - setting_vm_image.sh - INFO - Configured
 
 # Configuration du réseau
 network_config="{
-  \"iface_id\": \"eth0\",
+  \"iface_id\": \"${IFACE_ID}\",
   \"guest_mac\": \"${FC_MAC}\",
   \"host_dev_name\": \"${TAP_DEV}\"
 }"
 response=$(curl --unix-socket "${SOCKET_PATH}" -i \
-  -X PUT "http://localhost/network-interfaces/eth0" \
+  -X PUT "http://localhost/network-interfaces/${IFACE_ID}" \
   -H "accept: application/json" \
   -H "Content-Type: application/json" \
   -d "${network_config}")
@@ -186,7 +187,7 @@ network:
   version: 2
   renderer: networkd
   ethernets:
-    eth0:
+    ${IFACE_ID}:
       addresses: ["${VM_IP}${MASK_SHORT}"]
       routes:
         - to: default

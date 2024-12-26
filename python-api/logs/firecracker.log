@@ -19,3 +19,95 @@
 2024-12-24 23:39:19,098 - __main__ - INFO - Starting VM ubuntu
 2024-12-26 10:43:56,745 - __main__ - INFO - Stopping VM: ubuntu
 2024-12-26 10:44:28,954 - __main__ - INFO - VM ubuntu stopped successfully
+2024-12-26 17:27:23,505 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-26 17:27:23,506 - __main__ - INFO - Starting Firecracker process
+2024-12-26 17:27:23,608 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 17:27:25,617 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-26 17:27:30,705 - __main__ - INFO - Setting up VM
+2024-12-26 17:27:31,649 - __main__ - ERROR - Failed to setting custom vm:   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    69    0     0  100    69      0  22294 --:--:-- --:--:-- --:--:-- 34500
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   134    0     0  100   134      0  86062 --:--:-- --:--:-- --:--:--  130k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   152    0     0  100   152      0  79748 --:--:-- --:--:-- --:--:--  148k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   180  100    93  100    87  67002  62680 --:--:-- --:--:-- --:--:--  175k
+
+2024-12-26 17:27:31,649 - __main__ - ERROR - Error creating VM: 500: Failed to setting custom vm
+2024-12-26 17:34:29,895 - __main__ - INFO - Creating VM: vm for user: 1
+2024-12-26 17:34:29,895 - __main__ - INFO - Starting Firecracker process
+2024-12-26 17:34:29,997 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 17:34:32,000 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-26 17:34:38,254 - __main__ - INFO - Setting up VM
+2024-12-26 17:34:39,416 - __main__ - ERROR - Failed to setting custom vm:   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    69    0     0  100    69      0  29487 --:--:-- --:--:-- --:--:-- 34500
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   133    0     0  100   133      0  72519 --:--:-- --:--:-- --:--:--  129k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   151    0     0  100   151      0  62012 --:--:-- --:--:-- --:--:-- 75500
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   180  100    93  100    87  53633  50173 --:--:-- --:--:-- --:--:--  175k
+
+2024-12-26 17:34:39,416 - __main__ - ERROR - Error creating VM: 500: Failed to setting custom vm
+2024-12-26 17:41:49,583 - __main__ - INFO - Creating VM: ser for user: 1
+2024-12-26 17:41:49,583 - __main__ - INFO - Starting Firecracker process
+2024-12-26 17:41:49,685 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 17:41:51,688 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-26 17:41:57,680 - __main__ - INFO - Setting up VM
+2024-12-26 17:41:58,783 - __main__ - ERROR - Failed to setting custom vm: iptables: Bad rule (does a matching rule exist in that chain?).
+RTNETLINK answers: File exists
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    69    0     0  100    69      0  32227 --:--:-- --:--:-- --:--:-- 69000
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   134    0     0  100   134      0  66107 --:--:-- --:--:-- --:--:--  130k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   152    0     0  100   152      0  69438 --:--:-- --:--:-- --:--:-- 76000
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   180  100    93  100    87  47716  44638 --:--:-- --:--:-- --:--:--  175k
+
+2024-12-26 17:41:58,784 - __main__ - ERROR - Error creating VM: 500: Failed to setting custom vm
+2024-12-26 18:00:51,269 - __main__ - INFO - Creating VM: start for user: 1
+2024-12-26 18:00:51,269 - __main__ - INFO - Starting Firecracker process
+2024-12-26 18:00:51,371 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 18:00:53,374 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-26 18:01:00,289 - __main__ - INFO - Setting up VM
+2024-12-26 18:01:01,552 - __main__ - INFO - VM start created successfully
+2024-12-26 18:01:35,756 - __main__ - INFO - Starting Firecracker process
+2024-12-26 18:01:35,858 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 18:01:37,862 - __main__ - INFO - Starting VM start

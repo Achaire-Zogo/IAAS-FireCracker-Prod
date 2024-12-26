@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/scm/Documents/testweb/metrice/metrics.py", line 70, in <module>
+    collect_and_store_metrics()
+  File "/home/scm/Documents/testweb/metrice/metrics.py", line 61, in collect_and_store_metrics
+    save_metrics_to_database(1,cpu_usage, memory_usage, disk_usage)
+  File "/home/scm/Documents/testweb/metrice/metrics.py", line 37, in save_metrics_to_database
+    cursor.execute('''
+  File "/usr/local/lib/python3.10/dist-packages/mysql/connector/cursor_cext.py", line 352, in execute
+    raise ProgrammingError(
+mysql.connector.errors.ProgrammingError: Not all parameters were used in the SQL statement

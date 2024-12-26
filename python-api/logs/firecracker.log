@@ -1,0 +1,18 @@
+2024-12-26 13:43:03,793 - __main__ - INFO - Creating VM: admin for user: 1
+2024-12-26 13:43:03,793 - __main__ - INFO - Starting Firecracker process
+2024-12-26 13:43:03,894 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 13:43:05,897 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-26 13:43:18,335 - __main__ - INFO - Setting up VM
+2024-12-26 13:43:19,556 - __main__ - INFO - VM admin created successfully
+2024-12-26 13:43:39,773 - __main__ - INFO - Starting Firecracker process
+2024-12-26 13:43:39,875 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 13:43:41,877 - __main__ - INFO - Starting VM admin
+2024-12-26 13:48:37,108 - __main__ - INFO - Creating VM: admin1 for user: 1
+2024-12-26 13:48:37,108 - __main__ - INFO - Starting Firecracker process
+2024-12-26 13:48:37,209 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 13:48:39,212 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-26 13:48:53,993 - __main__ - INFO - Setting up VM
+2024-12-26 13:48:57,959 - __main__ - INFO - VM admin1 created successfully
+2024-12-26 13:49:07,798 - __main__ - INFO - Starting Firecracker process
+2024-12-26 13:49:07,901 - __main__ - INFO - Socket is available, waiting for API
+2024-12-26 13:49:09,903 - __main__ - INFO - Starting VM admin1

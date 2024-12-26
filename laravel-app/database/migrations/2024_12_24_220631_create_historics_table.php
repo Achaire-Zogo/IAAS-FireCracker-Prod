@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('historics', function (Blueprint $table) {
             $table->id();
-            
-            $table->foreignId('vm_id')->constrained()->onDelete('cascade');
+            $table->foreignId('vm_id')->references('id')->on('virtual_machines')->onDelete('cascade');
             $table->string('status');
             $table->timestamps();
         });

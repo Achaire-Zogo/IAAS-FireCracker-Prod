@@ -53,7 +53,7 @@ class VirtualMachineController extends Controller
     private function generateMacAddress($ip_address)
     {
         // Extraire les octets de l'adresse IP
-        preg_match('/172\.16\.(\d+)\.(\d+)/', $ip_address, $matches);
+        preg_match('/192\.168\.(\d+)\.(\d+)/', $ip_address, $matches);
 
         // Utiliser les octets de l'IP pour générer une MAC unique
         return sprintf("06:00:AC:10:%02x:%02x",

@@ -644,7 +644,7 @@ async def get_vm_metrics(user_id: str, vm_name: str):
 async def update_cpu_metrics(metrics: MetricsUpdate, db: Session = Depends(get_db)):
     try:
         # Rechercher la VM
-        print(metrics)
+        # print(metrics)
         vm = db.query(VirtualMachine).filter(
             VirtualMachine.id == metrics.vm_id,
             VirtualMachine.user_id == metrics.user_id

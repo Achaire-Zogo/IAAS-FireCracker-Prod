@@ -287,7 +287,7 @@ class VirtualMachineController extends Controller
             'host' => $vm->ip_address,
             'port' => $vm->ssh_port,
             'username' => 'root',
-            'private_key' => $vm->sshKey->private_key
+            'private_key' => $vm->sshKey->name
         ];
 
         return view('virtual-machines.show', compact(

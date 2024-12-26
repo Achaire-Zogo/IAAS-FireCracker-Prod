@@ -67,7 +67,7 @@ end_step "Installation de MySQL"
 
 # Installation de phpMyAdmin
 start_step "Installation de phpMyAdmin"
-DEBIAN_FRONTEND=noninteractive apt install -y phpmyadmin php-mbstring php-zip php-gd php-json php-curl
+DEBIAN_FRONTEND=noninteractive apt install -y phpmyadmin php8.2-mbstring php8.2-zip php8.2-gd php8.2-json php8.2-curl
 
 # Configuration de phpMyAdmin pour Apache
 ln -s /usr/share/phpmyadmin /var/www/html/phpmyadmin
@@ -192,6 +192,6 @@ echo -e "   Mot de passe: phpmyadmin_password"
 echo
 echo -e "${ORANGE} N'oubliez pas de:${NC}"
 echo -e "1. Configurer votre nom de domaine dans /etc/hosts"
-echo -e "2. Démarrer l'API Python avec: cd /var/www/IAAS-FireCracker-Prod/python-api && source venv/bin/activate && sudo python3 main.py"
+echo -e "2. Démarrer l'API Python avec: sudo cd /var/www/IAAS-FireCracker-Prod/python-api && source venv/bin/activate && sudo python3 main.py"
 echo -e "3. Changer les identifiants par défaut après la première connexion"
 echo -e "4. Changer le mot de passe de phpMyAdmin pour plus de sécurité"

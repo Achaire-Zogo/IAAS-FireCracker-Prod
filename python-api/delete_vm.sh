@@ -54,22 +54,22 @@ cleanup_files() {
     echo "Suppression des fichiers..."
     
     # Supprimer le socket s'il existe
-    [ -S "${SOCKET_PATH}" ] && rm -f "${SOCKET_PATH}"
+    [ -S "${SOCKET_PATH}" ] && sudo rm -f "${SOCKET_PATH}"
     
     # Supprimer le fichier PID s'il existe
-    [ -f "${PID_FILE}" ] && rm -f "${PID_FILE}"
+    [ -f "${PID_FILE}" ] && sudo rm -f "${PID_FILE}"
     
     # Supprimer le fichier de log s'il existe
-    [ -f "${LOG_PATH}" ] && rm -f "${LOG_PATH}"
+    [ -f "${LOG_PATH}" ] && sudo rm -f "${LOG_PATH}"
     
     # Supprimer les fichiers de configuration s'ils existent
-    [ -f "${VM_DIR}/config.json" ] && rm -f "${VM_DIR}/config.json"
-    [ -f "${VM_DIR}/vmlinux" ] && rm -f "${VM_DIR}/vmlinux"
-    [ -f "${VM_DIR}/rootfs.ext4" ] && rm -f "${VM_DIR}/rootfs.ext4"
+    [ -f "${VM_DIR}/config.json" ] && sudo rm -f "${VM_DIR}/config.json"
+    [ -f "${VM_DIR}/vmlinux" ] && sudo rm -f "${VM_DIR}/vmlinux"
+    [ -f "${VM_DIR}/rootfs.ext4" ] && sudo rm -f "${VM_DIR}/rootfs.ext4"
     
     # Supprimer le répertoire de la VM
     if [ -d "${VM_DIR}" ]; then
-        rm -rf "${VM_DIR}"
+        sudo rm -rf "${VM_DIR}"
         echo "Répertoire de la VM supprimé: ${VM_DIR}"
     fi
 }

@@ -640,41 +640,41 @@ async def get_vm_metrics(user_id: str, vm_name: str):
         logger.error(f"Error getting VM metrics: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/cpu_metrics")
-async def update_cpu_metrics(metrics: MetricsUpdate, db: Session = Depends(get_db)):
-    try:
-        # Rechercher la VM
-        # print(metrics)
-        vm = db.query(VirtualMachine).filter(
-            VirtualMachine.id == metrics.vm_id,
-            VirtualMachine.user_id == metrics.user_id
-        ).first()
+# @app.post("/api/cpu_metrics")
+# async def update_cpu_metrics(metrics: MetricsUpdate, db: Session = Depends(get_db)):
+#     try:
+#         # Rechercher la VM
+#         # print(metrics)
+#         vm = db.query(VirtualMachine).filter(
+#             VirtualMachine.id == metrics.vm_id,
+#             VirtualMachine.user_id == metrics.user_id
+#         ).first()
 
-        if not vm:
-            raise HTTPException(
-                status_code=404,
-                detail="Machine virtuelle introuvable"
-            )
+#         if not vm:
+#             raise HTTPException(
+#                 status_code=404,
+#                 detail="Machine virtuelle introuvable"
+#             )
 
-        # Mettre à jour les métriques
-        vm.cpu_usage_percent = metrics.cpu_usage
-        vm.memory_usage_mib = metrics.memory_usage
-        vm.disk_usage_bytes = metrics.disk_usage
+#         # Mettre à jour les métriques
+#         vm.cpu_usage_percent = metrics.cpu_usage
+#         vm.memory_usage_mib = metrics.memory_usage
+#         vm.disk_usage_bytes = metrics.disk_usage
         
-        # Sauvegarder les changements
-        db.commit()
+#         # Sauvegarder les changements
+#         db.commit()
 
-        return {
-            "message": "Métriques enregistrées avec succès"
-        }
+#         return {
+#             "message": "Métriques enregistrées avec succès"
+#         }
 
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Une erreur s'est produite lors de la mise à jour des métriques : {str(e)}"
-        )
+#     except HTTPException as e:
+#         raise e
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Une erreur s'est produite lors de la mise à jour des métriques : {str(e)}"
+#         )
 
 if __name__ == "__main__":
     import uvicorn

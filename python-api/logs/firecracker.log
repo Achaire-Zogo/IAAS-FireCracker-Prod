@@ -126,3 +126,30 @@ RTNETLINK answers: File exists
 2024-12-26 23:34:45,449 - __main__ - INFO - Preparing custom vm for user 1
 2024-12-26 23:34:53,593 - __main__ - INFO - Setting up VM
 2024-12-26 23:34:54,780 - __main__ - INFO - VM zz created successfully
+2024-12-27 07:56:17,073 - __main__ - INFO - Starting Firecracker process
+2024-12-27 07:56:17,177 - __main__ - INFO - Socket is available, waiting for API
+2024-12-27 07:56:19,179 - __main__ - INFO - Starting VM zz
+2024-12-27 07:58:16,160 - __main__ - INFO - Stopping VM: zz
+2024-12-27 07:58:48,342 - __main__ - INFO - VM zz stopped successfully
+2024-12-27 07:59:00,287 - __main__ - INFO - Deleting VM: zz
+2024-12-27 07:59:01,140 - __main__ - INFO - VM zz deleted successfully
+2024-12-27 08:01:25,864 - __main__ - INFO - Creating VM: zaz for user: 1
+2024-12-27 08:01:25,865 - __main__ - INFO - Starting Firecracker process
+2024-12-27 08:01:25,967 - __main__ - INFO - Socket is available, waiting for API
+2024-12-27 08:01:27,970 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-27 08:01:33,037 - __main__ - INFO - Setting up VM
+2024-12-27 08:01:34,177 - __main__ - INFO - VM zaz created successfully
+2024-12-27 08:01:54,501 - __main__ - INFO - Starting Firecracker process
+2024-12-27 08:01:54,604 - __main__ - INFO - Socket is available, waiting for API
+2024-12-27 08:01:56,606 - __main__ - INFO - Starting VM zaz
+2024-12-27 08:40:15,939 - __main__ - INFO - Stopping VM: zaz
+2024-12-27 08:40:48,077 - __main__ - INFO - VM zaz stopped successfully
+2024-12-27 08:41:43,115 - __main__ - INFO - Creating VM: ubuntu for user: 1
+2024-12-27 08:41:43,115 - __main__ - INFO - Starting Firecracker process
+2024-12-27 08:41:43,217 - __main__ - INFO - Socket is available, waiting for API
+2024-12-27 08:41:45,227 - __main__ - INFO - Preparing custom vm for user 1
+2024-12-27 08:41:52,089 - __main__ - INFO - Setting up VM
+2024-12-27 08:41:53,449 - __main__ - INFO - VM ubuntu created successfully
+2024-12-27 08:42:17,891 - __main__ - INFO - Starting Firecracker process
+2024-12-27 08:42:17,994 - __main__ - INFO - Socket is available, waiting for API
+2024-12-27 08:42:19,997 - __main__ - INFO - Starting VM ubuntu

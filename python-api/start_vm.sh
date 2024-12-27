@@ -29,6 +29,8 @@ CUSTOM_VM="${VM_DIR}/${OS_TYPE}.ext4"
 
 MASK_SHORT="/30"
 FC_MAC="${VM_MAC}"
+# IFACE_ID="${TAP_DEVICE}"
+IFACE_ID="eth0"
 
 # Vérifier que la VM existe
 if [ ! -d "${VM_DIR}" ]; then
@@ -43,7 +45,7 @@ response=$(curl --unix-socket "${SOCKET_PATH}" -i \
   -H 'Content-Type: application/json' \
   -d "{
     \"kernel_image_path\": \"${KERNEL_PATH}\",
-    \"boot_args\": \"console=ttyS0 reboot=k panic=1 pci=off ip=${VM_IP}::${TAP_IP}:255.255.255.252::eth0:off\"
+    \"boot_args\": \"console=ttyS0 reboot=k panic=1 pci=off ip=${VM_IP}::${TAP_IP}:255.255.255.252::${IFACE_ID}:off\"
   }")
 
 check_curl_response "$response" "Configuring kernel" ${LINENO} "$LOG_PATH" || {
@@ -117,12 +119,12 @@ echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') - start_vm.sh - INFO - Configured routing
 
 # Configuration du réseau
 network_config="{
-  \"iface_id\": \"eth0\",
+  \"iface_id\": \"${IFACE_ID}\",
   \"guest_mac\": \"${FC_MAC}\",
   \"host_dev_name\": \"${TAP_DEVICE}\"
 }"
 response=$(curl --unix-socket "${SOCKET_PATH}" -i \
-  -X PUT "http://localhost/network-interfaces/eth0" \
+  -X PUT "http://localhost/network-interfaces/${IFACE_ID}" \
   -H "accept: application/json" \
   -H "Content-Type: application/json" \
   -d "${network_config}")
